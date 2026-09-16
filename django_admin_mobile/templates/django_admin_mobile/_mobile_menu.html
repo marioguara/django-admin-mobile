@@ -1,0 +1,13 @@
+{% if tiles %}
+<section class="dam-mobile-menu" aria-label="Menu mobile">
+    {% for tile in tiles %}
+    <a class="dam-tile"
+       href="{{ tile.url }}"
+       style="--dam-color: {{ tile.color }}; --dam-bg: {{ tile.background }};"
+       aria-label="{{ tile.label }}">
+        <span class="dam-tile-icon" aria-hidden="true">{{ tile.icon }}</span>
+        <span class="dam-tile-label">{{ tile.label }}</span>
+    </a>
+    {% endfor %}
+</section>
+{% endif %}

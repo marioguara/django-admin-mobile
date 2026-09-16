@@ -1,0 +1,251 @@
+/* =========================================================================
+   django_admin_mobile
+   Foglio di stile del pacchetto: griglia menu mobile + adattamenti generici
+   per changelist / change form.
+   ========================================================================= */
+
+/* --------------------------------------------------------------------------
+   1. Griglia mobile (dashboard / index)
+   -------------------------------------------------------------------------- */
+.dam-mobile-menu {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    margin: 12px 0 24px;
+    padding: 0 4px;
+}
+
+.dam-tile {
+    --dam-color: #417690;
+    --dam-bg: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 8px;
+    padding: 16px 10px;
+    min-height: 104px;
+    border-radius: 14px;
+    border: 2px solid var(--dam-color);
+    background: var(--dam-bg);
+    color: var(--dam-color);
+    text-decoration: none !important;
+    font-weight: 600;
+    line-height: 1.15;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.dam-tile:hover,
+.dam-tile:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+    background: var(--dam-color);
+    color: #fff;
+    outline: none;
+}
+
+.dam-tile:active {
+    transform: translateY(0);
+}
+
+.dam-tile-icon {
+    font-size: 30px;
+    line-height: 1;
+}
+
+.dam-tile-label {
+    font-size: 13px;
+    letter-spacing: .2px;
+    word-break: break-word;
+}
+
+/* Tema scuro admin di Django */
+html[data-theme="dark"] .dam-tile,
+@media (prefers-color-scheme: dark) {
+    html:not([data-theme="light"]) .dam-tile {
+        background: var(--darkened-bg, #1f2933);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    }
+}
+
+/* --------------------------------------------------------------------------
+   2. Ottimizzazioni mobile per tutti i modelli
+   Applicate sotto i 1024px per non toccare l'esperienza desktop.
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+
+    /* Su schermi piccoli il grid diventa 2-3 colonne. */
+    .dam-mobile-menu {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 10px;
+    }
+    .dam-tile { min-height: 96px; padding: 14px 8px; }
+    .dam-tile-icon { font-size: 26px; }
+    .dam-tile-label { font-size: 12px; }
+
+    /* Nasconde la sidebar delle azioni recenti e la nav-sidebar sull'index. */
+    body.dam-index #content-related { display: none; }
+    body.dam-index .colMS #content-main { width: 100%; }
+
+    /* Aumenta le aree tattili nei form. */
+    .form-row input[type="text"],
+    .form-row input[type="number"],
+    .form-row input[type="email"],
+    .form-row input[type="url"],
+    .form-row input[type="password"],
+    .form-row input[type="search"],
+    .form-row input[type="tel"],
+    .form-row input[type="date"],
+    .form-row input[type="time"],
+    .form-row input[type="datetime-local"],
+    .form-row textarea,
+    .form-row select {
+        min-height: 44px;
+        font-size: 16px;   /* impedisce lo zoom automatico su iOS */
+        padding: 8px 10px;
+        box-sizing: border-box;
+    }
+
+    /* Bottoni submit più visibili e comodi. */
+    .submit-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px;
+        position: sticky;
+        bottom: 0;
+        background: var(--body-bg, #fff);
+        border-top: 1px solid var(--border-color, #ddd);
+        z-index: 10;
+    }
+    .submit-row input,
+    .submit-row a.deletelink,
+    .submit-row a.closelink {
+        min-height: 44px;
+        padding: 10px 14px;
+        font-size: 14px;
+        border-radius: 8px;
+    }
+
+    /* Changelist: renderizza le tabelle come card impilate. */
+    .dam-cards #result_list,
+    .dam-cards #result_list thead {
+        display: block;
+    }
+    .dam-cards #result_list thead { display: none; }
+    .dam-cards #result_list tbody,
+    .dam-cards #result_list tr,
+    .dam-cards #result_list td {
+        display: block;
+        width: 100%;
+    }
+    .dam-cards #result_list tr {
+        margin: 0 0 12px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color, #e0e0e0);
+        background: var(--body-bg, #fff);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+    .dam-cards #result_list td {
+        padding: 6px 0;
+        border: none;
+        font-size: 14px;
+    }
+    .dam-cards #result_list td::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        color: var(--body-quiet-color, #666);
+        margin-bottom: 2px;
+    }
+    .dam-cards #result_list td.action-checkbox {
+        display: inline-block;
+        width: auto;
+        vertical-align: middle;
+        margin-right: 8px;
+    }
+
+    /* Nasconde intestazioni ripetute che non servono su mobile. */
+    #changelist-filter h2,
+    #changelist-filter h3 {
+        font-size: 13px;
+    }
+
+    /* Impagina i filtri come drawer laterale attivabile via classe. */
+    #changelist-filter {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: min(320px, 88vw);
+        transform: translateX(105%);
+        transition: transform .18s ease;
+        z-index: 9998;
+        overflow-y: auto;
+        background: var(--body-bg, #fff);
+        box-shadow: -6px 0 24px rgba(0, 0, 0, 0.15);
+        padding: 12px 14px;
+    }
+    #changelist-filter.dam-open { transform: translateX(0); }
+
+    .dam-filter-fab {
+        position: fixed;
+        right: 14px;
+        bottom: 14px;
+        z-index: 9997;
+        border: none;
+        border-radius: 999px;
+        padding: 12px 18px;
+        background: #417690;
+        color: #fff;
+        font-weight: 600;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Tab bar in basso opzionale (Home / Elenchi / Impostazioni). */
+    .dam-tabbar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: space-around;
+        padding: 4px 8px calc(env(safe-area-inset-bottom, 0px) + 4px);
+        background: var(--body-bg, #fff);
+        border-top: 1px solid var(--border-color, #ddd);
+        z-index: 9996;
+    }
+    .dam-tabbar a {
+        flex: 1;
+        text-align: center;
+        padding: 8px 4px;
+        font-size: 11px;
+        color: var(--body-fg, #333);
+        text-decoration: none;
+        line-height: 1.1;
+    }
+    .dam-tabbar a > span { display: block; font-size: 20px; margin-bottom: 2px; }
+    .dam-tabbar a.active { color: #417690; font-weight: 700; }
+}
+
+/* --------------------------------------------------------------------------
+   3. Tema scuro nativo dell'admin di Django (Django >= 4.2)
+   -------------------------------------------------------------------------- */
+html[data-theme="dark"] .dam-tile {
+    background: #1f2933;
+    color: #eaf1f7;
+}
+html[data-theme="dark"] .dam-tile:hover {
+    background: var(--dam-color);
+    color: #fff;
+}
+html[data-theme="dark"] #changelist-filter {
+    background: #1f2933;
+    color: #eaf1f7;
+}

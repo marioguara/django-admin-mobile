@@ -1,0 +1,7 @@
+include README.md
+include LICENSE
+include CHANGELOG.md
+recursive-include django_admin_mobile/templates *
+recursive-include django_admin_mobile/static *
+recursive-include django_admin_mobile/migrations *.py
+global-exclude *.pyc __pycache__ *.pyo
