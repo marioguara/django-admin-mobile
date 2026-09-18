@@ -33,8 +33,11 @@ def test_submit_row_declares_its_direction():
 
 
 def test_form_content_reserves_the_measured_bar_height():
-    """Un valore fisso sbaglia: la barra cambia con lingua, bottoni e tacca."""
-    rule = _rule("body.dam-mobile.dam-forms.dam-has-submitrow #content {")
+    """Un valore fisso sbaglia: la barra cambia con lingua, bottoni e tacca.
+
+    Lo spazio si riserva sul body, non sul solo #content: quello che il
+    progetto aggiunge dopo il contenuto finirebbe sotto le barre."""
+    rule = _rule("body.dam-mobile.dam-has-submitrow {")
     assert "var(--dam-submitrow-h" in rule
     assert "--dam-submitrow-h" in JS, "l'altezza dev'essere misurata dal JavaScript"
 
@@ -48,6 +51,24 @@ def test_collapsed_fieldsets_stay_collapsed():
     """`fieldset.collapsed * {display:none}` di Django è meno specifico
     delle regole del pacchetto: serve una regola esplicita."""
     assert "fieldset.collapsed .form-row" in CSS
+
+
+def test_mobile_lets_the_document_grow():
+    """L'admin dà a html, body e #container `height: 100%`: il contenuto più
+    lungo della finestra li sfora e lo spazio riservato in fondo al body non
+    finirebbe mai sotto al contenuto vero, lasciando l'ultima riga coperta."""
+    rule = _rule("body.dam-mobile #container {")
+    assert "height: auto" in rule
+    assert "min-height: 100%" in rule
+
+
+def test_confirmation_pages_get_an_action_bar():
+    """Le pagine di conferma di Django non usano .submit-row: i bottoni
+    starebbero in fondo alla pagina, sotto le barre fisse."""
+    assert "adoptConfirmRow" in JS
+    assert 'classList.add("submit-row", "dam-synth-row")' in JS
+    # ...ma negli elenchi il primo invio è il bottone "Cerca", non una conferma.
+    assert 'if (KIND === "changelist") { return null; }' in JS
 
 
 @pytest.mark.parametrize("token", [

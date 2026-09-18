@@ -228,6 +228,8 @@
 
     function hideInstallBanner() {
         if (S.installBanner) { S.installBanner.hidden = true; }
+        document.body.classList.remove("dam-install-open");
+        document.documentElement.style.removeProperty("--dam-install-h");
     }
 
     function showInstallBanner() {
@@ -260,6 +262,22 @@
             S.installBanner = banner;
         }
         S.installBanner.hidden = false;
+        document.body.classList.add("dam-install-open");
+        syncInstallBanner();
+    }
+
+    /* Anche l'invito occupa spazio vero in fondo: va misurato, altrimenti
+     * copre il bottone flottante e l'ultima riga del contenuto. */
+    function syncInstallBanner() {
+        var banner = S.installBanner;
+        if (!banner || banner.hidden) {
+            document.documentElement.style.removeProperty("--dam-install-h");
+            document.body.classList.remove("dam-install-open");
+            return;
+        }
+        document.documentElement.style.setProperty(
+            "--dam-install-h", banner.offsetHeight + "px"
+        );
     }
 
     window.addEventListener("beforeinstallprompt", function (event) {
@@ -748,12 +766,35 @@
             controls[0];
     }
 
+    /* Le pagine di conferma di Django (eliminazione singola, eliminazione
+     * di massa) non usano .submit-row: i bottoni "Sì, sono sicuro" e
+     * "No, torna indietro" stanno in un <div> qualunque in fondo alla pagina,
+     * dove le barre fisse li coprirebbero. Gli si aggiunge la classe di
+     * Django, così eredita tutto lo stile della barra azioni. */
+    function adoptConfirmRow() {
+        if (document.querySelector(".submit-row")) { return null; }
+        // Negli elenchi il primo invio è il bottone "Cerca": non è affatto
+        // un comando di conferma e non va trasformato in barra.
+        if (KIND === "changelist") { return null; }
+        var submit = document.querySelector(
+            "#content form input[type=submit], #content form button[type=submit]"
+        );
+        if (!submit) { return null; }
+        if (closest(submit, "#toolbar, #changelist-search, .dam-toolbar")) { return null; }
+        var row = submit.parentNode;
+        if (!row || row.nodeType !== 1 || row === document.body) { return null; }
+        row.classList.add("submit-row", "dam-synth-row");
+        return row;
+    }
+
     function formOn() {
-        var row = document.querySelector(".submit-row");
+        var row = document.querySelector(".submit-row") || adoptConfirmRow();
         if (!row) { return; }
         FORM.row = row;
         document.body.classList.add("dam-has-submitrow");
-        if (KIND === "form") { document.body.classList.add("dam-editing"); }
+        // Una pagina di conferma è a tutti gli effetti una schermata di
+        // lavoro: la barra in basso serve più della navigazione.
+        if (KIND === "form" || KIND === "other") { document.body.classList.add("dam-editing"); }
 
         if (!FORM.ready) {
             var controls = Array.prototype.slice.call(row.querySelectorAll(
@@ -807,6 +848,9 @@
 
     function formOff() {
         document.body.classList.remove("dam-has-submitrow", "dam-editing", "dam-actions-sheet");
+        if (FORM.row && FORM.row.classList.contains("dam-synth-row")) {
+            FORM.row.classList.remove("submit-row", "dam-synth-row");
+        }
         if (FORM.more) { FORM.more.hidden = true; }
         each(FORM.others, function (control) {
             control.removeAttribute("form");
@@ -922,12 +966,14 @@
         if (event.key === "Escape") { closePanel(); }
     });
 
-    window.addEventListener("resize", syncSubmitRow);
-    window.addEventListener("orientationchange", syncSubmitRow);
+    function syncBars() { syncSubmitRow(); syncInstallBanner(); }
+    window.addEventListener("resize", syncBars);
+    window.addEventListener("orientationchange", syncBars);
 
     registerServiceWorker();
     apply();
     showInstallBanner();
+    syncBars();
     if (mq.addEventListener) { mq.addEventListener("change", apply); }
     else if (mq.addListener) { mq.addListener(apply); }
 })();

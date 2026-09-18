@@ -170,6 +170,17 @@ body.dam-mobile .dam-classic-list,
 body.dam-mobile #content > h1,
 body.dam-mobile .skip-to-content-link { display: none !important; }
 
+/* L'admin di Django dà a html, body e #container `height: 100%`: il
+   contenuto più lungo della finestra li sfora, e lo spazio riservato in
+   fondo al body non finirebbe mai sotto al contenuto vero. Su telefono si
+   lascia crescere il documento, così le barre fisse non coprono l'ultima
+   riga né quello che il progetto aggiunge dopo. */
+body.dam-mobile,
+body.dam-mobile #container {
+    height: auto;
+    min-height: 100%;
+}
+
 body.dam-mobile #container { padding: 0; }
 
 body.dam-mobile .main {
@@ -916,6 +927,11 @@ body.dam-mobile .dam-fab {
     -webkit-tap-highlight-color: transparent;
 }
 body.dam-mobile.dam-no-tabbar .dam-fab { bottom: calc(var(--dam-safe-bottom) + 16px); }
+/* Elenchi modificabili in linea: c'è anche la barra di salvataggio, e il
+   bottone flottante le finirebbe sopra. */
+body.dam-mobile.dam-has-submitrow .dam-fab {
+    bottom: calc(var(--dam-tabbar-h) + var(--dam-submitrow-h, 72px) + var(--dam-safe-bottom) + 16px);
+}
 body.dam-mobile .dam-fab:active { transform: scale(.96); }
 body.dam-mobile .dam-fab .dam-fab-plus { font-size: 24px; line-height: 1; }
 
@@ -1131,9 +1147,16 @@ body.dam-mobile.dam-forms .submit-row .dam-more {
     color: #c0392b;
 }
 
-/* Spazio in fondo pari all'altezza vera della barra, misurata dal JavaScript. */
-body.dam-mobile.dam-forms.dam-has-submitrow #content {
-    padding-bottom: calc(var(--dam-submitrow-h, 72px) + 16px);
+/* Spazio in fondo pari all'altezza vera delle barre, misurata dal JavaScript.
+   Va riservato sul body e non sul solo #content: quello che il progetto
+   aggiunge dopo il contenuto (un piè di pagina, un bottone di aiuto) finirebbe
+   altrimenti sotto le barre fisse, irraggiungibile. */
+body.dam-mobile.dam-has-submitrow {
+    padding-bottom: calc(var(--dam-tabbar-h) + var(--dam-submitrow-h, 72px) + var(--dam-safe-bottom) + 8px);
+}
+body.dam-mobile.dam-editing.dam-has-submitrow,
+body.dam-mobile.dam-no-tabbar.dam-has-submitrow {
+    padding-bottom: calc(var(--dam-submitrow-h, 72px) + var(--dam-safe-bottom) + 8px);
 }
 
 body.dam-mobile.dam-forms .inline-group { margin: 0 0 12px; }
@@ -1384,6 +1407,12 @@ body.dam-mobile .dam-install {
     box-shadow: 0 -4px 18px rgba(0, 0, 0, .24);
 }
 body.dam-mobile.dam-no-tabbar .dam-install { bottom: var(--dam-safe-bottom); }
+body.dam-mobile.dam-install-open {
+    padding-bottom: calc(var(--dam-tabbar-h) + var(--dam-install-h, 76px) + var(--dam-safe-bottom) + 8px);
+}
+body.dam-mobile.dam-install-open .dam-fab {
+    bottom: calc(var(--dam-tabbar-h) + var(--dam-install-h, 76px) + var(--dam-safe-bottom) + 16px);
+}
 body.dam-locked .dam-install,
 body.dam-selection .dam-install,
 /* Nei moduli la barra di salvataggio sta esattamente lì: l'invito a

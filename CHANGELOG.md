@@ -6,6 +6,28 @@ e il progetto usa [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-09-19
+
+Rilievi emersi passando in rassegna 92 schermate dell'admin a 320 e 360 px.
+
+### Corretto
+- **L'ultima riga del contenuto restava sotto le barre fisse.** L'admin dà a
+  `html`, `body` e `#container` `height: 100%`: un contenuto più lungo della
+  finestra li sfora, e lo spazio riservato in fondo al body non finiva mai
+  sotto al contenuto vero. Su telefono il documento può ora crescere.
+- **I bottoni delle pagine di conferma** (eliminazione singola e di massa)
+  finivano sotto le barre: quelle pagine non usano `.submit-row`, i comandi
+  stanno in un `<div>` qualsiasi. Ora vengono riconosciuti e trattati come
+  barra delle azioni, con la stessa resa.
+- **L'invito a installare copriva il bottone flottante** «Aggiungi»: la sua
+  altezza viene ora misurata e lo spazio riservato, come per la barra azioni.
+- **Il bottone flottante copriva il «Salva»** negli elenchi modificabili in
+  linea: ora si posiziona sopra la barra di salvataggio.
+
+### Aggiunto
+- Guardie nei test sul foglio di stile e sullo script, per non ri-inciampare
+  nelle sovrascritture di Django che si vedono solo su un telefono.
+
 ## [0.3.1] - 2026-09-18
 
 ### Modificato
