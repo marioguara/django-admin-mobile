@@ -6,6 +6,31 @@ e il progetto usa [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-09-18
+
+### Modificato
+- **La barra delle azioni dei moduli è ora una riga sola.** Resta in vista
+  l'azione principale (quella che Django marca come predefinita, altrimenti
+  «Salva», altrimenti «Salva e continua»); le altre — compresa l'eliminazione,
+  in fondo e in rosso — stanno dietro il tasto «⋯», in un pannello che sale
+  dal basso. Con tre o quattro bottoni a tutta larghezza la barra copriva metà
+  del modulo.
+  I bottoni spostati restano bottoni veri: escono dal `<form>` ma vengono
+  riagganciati con l'attributo `form=`, così continuano a inviare il proprio
+  `name` (`_continue`, `_addanother`…). Se il modulo non ha un `id` non si
+  sposta niente e la riga scorre in orizzontale.
+- **Mentre si compila un modulo la barra prende il posto della barra di
+  navigazione**: due barre fisse una sopra l'altra rubavano 120 px di schermo.
+  Si esce con il tasto indietro in alto; il menu resta sotto la lente.
+
+### Corretto
+- **La barra restava alta il doppio del necessario** (122 px invece di 66):
+  `responsive.css` di Django impone `flex-direction: column` alla submit-row
+  sotto i 767 px, e il pacchetto non dichiarava la direzione.
+- Lo spazio riservato in fondo al contenuto non era più un valore fisso di
+  82 px ma l'altezza vera della barra, misurata dal JavaScript e aggiornata
+  a ogni ridimensionamento: nessun campo resta più coperto.
+
 ## [0.3.0] - 2026-09-18
 
 ### Aggiunto

@@ -1019,30 +1019,56 @@ body.dam-mobile.dam-forms .helptext {
 }
 body.dam-mobile.dam-forms .errorlist { margin: 4px 0 0; padding: 0 0 0 16px; font-size: 12px; }
 
-/* Barra dei bottoni sempre visibile in fondo allo schermo. */
+/* --------------------------------------------------------------------------
+   Barra delle azioni del modulo.
+   Su telefono deve essere una riga sola e bassa: con tre o quattro bottoni
+   a tutta larghezza andrebbe a capo e coprirebbe metà del modulo. Resta
+   quindi l'azione principale, e le altre finiscono in un pannello dietro
+   il tasto "⋯". L'altezza vera della barra viene misurata dal JavaScript e
+   riservata in fondo al contenuto, così nessun campo resta nascosto.
+   -------------------------------------------------------------------------- */
 body.dam-mobile.dam-forms .submit-row {
     position: fixed;
     left: 0;
     right: 0;
     bottom: calc(var(--dam-tabbar-h) + var(--dam-safe-bottom));
     display: flex;
-    flex-wrap: wrap;
+    /* responsive.css di Django impone flex-direction: column alla submit-row
+       sotto i 767 px: senza questa riga i bottoni restano incolonnati e la
+       barra diventa alta quanto mezzo schermo. */
+    flex-direction: row;
+    flex-wrap: nowrap;          /* mai su più righe */
+    align-items: center;
     gap: 8px;
     margin: 0;
-    padding: 8px 12px;
+    padding: 8px 12px calc(8px + var(--dam-safe-bottom));
+    box-sizing: border-box;
     background: var(--dam-surface);
     border-top: 1px solid var(--dam-border);
-    box-shadow: 0 -2px 12px rgba(16, 24, 32, .1);
+    box-shadow: 0 -2px 14px rgba(16, 24, 32, .12);
     z-index: 1100;
+    overflow-x: auto;           /* ripiego: se il pannello non è disponibile */
 }
-body.dam-mobile.dam-no-tabbar.dam-forms .submit-row { bottom: var(--dam-safe-bottom); }
+
+/* Mentre si compila un modulo la barra prende il posto della navigazione:
+   due barre fisse una sopra l'altra rubano 120 px di schermo. Si esce con
+   il tasto indietro in alto, e il menu resta sotto la lente. */
+body.dam-mobile.dam-editing .dam-tabbar { display: none; }
+body.dam-mobile.dam-editing.dam-forms .submit-row { bottom: 0; }
+body.dam-mobile.dam-no-tabbar.dam-forms .submit-row { bottom: 0; }
+
+/* In barra resta solo l'azione principale più il tasto delle altre. */
+body.dam-mobile.dam-forms.dam-actions-sheet .submit-row > *:not(.dam-primary):not(.dam-more) {
+    display: none;
+}
+
 body.dam-mobile.dam-forms .submit-row input[type="submit"],
 body.dam-mobile.dam-forms .submit-row button,
 body.dam-mobile.dam-forms .submit-row a {
-    flex: 1 1 auto;
-    min-height: 46px;
-    padding: 0 14px;
-    border-radius: var(--dam-radius-sm);
+    flex: 0 1 auto;
+    min-height: 48px;
+    padding: 0 16px;
+    border-radius: 12px;
     font-size: 15px;
     font-weight: 600;
     display: inline-flex;
@@ -1050,10 +1076,65 @@ body.dam-mobile.dam-forms .submit-row a {
     justify-content: center;
     float: none;
     margin: 0;
+    white-space: nowrap;
 }
-body.dam-mobile.dam-forms .submit-row a.deletelink { flex: 0 0 auto; }
-/* Spazio in fondo per non finire sotto la barra dei bottoni. */
-body.dam-mobile.dam-forms.dam-has-submitrow #content { padding-bottom: 82px; }
+
+body.dam-mobile.dam-forms .submit-row .dam-primary {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 16px;
+    font-weight: 700;
+    background: var(--dam-accent);
+    border: 0;
+    color: var(--dam-on-accent);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+body.dam-mobile.dam-forms .submit-row .dam-primary:active { filter: brightness(.92); }
+
+body.dam-mobile.dam-forms .submit-row .dam-more {
+    flex: 0 0 auto;
+    width: 48px;
+    min-width: 48px;
+    padding: 0;
+    border: 1px solid var(--dam-border);
+    background: var(--dam-surface);
+    color: var(--dam-text);
+    font-size: 22px;
+    line-height: 1;
+}
+
+/* Le azioni secondarie, dentro il pannello: una per riga, comode da toccare. */
+.dam-sheet-body .dam-sheet-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 50px;
+    margin: 0 0 8px;
+    padding: 0 16px;
+    box-sizing: border-box;
+    border: 1px solid var(--dam-border);
+    border-radius: 12px;
+    background: var(--dam-surface);
+    color: var(--dam-text);
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    float: none;
+}
+.dam-sheet-body .dam-sheet-action:hover { background: var(--dam-surface-2); color: var(--dam-text); }
+.dam-sheet-body a.deletelink.dam-sheet-action {
+    border-color: color-mix(in srgb, #c0392b 40%, transparent);
+    background: color-mix(in srgb, #c0392b 8%, transparent);
+    color: #c0392b;
+}
+
+/* Spazio in fondo pari all'altezza vera della barra, misurata dal JavaScript. */
+body.dam-mobile.dam-forms.dam-has-submitrow #content {
+    padding-bottom: calc(var(--dam-submitrow-h, 72px) + 16px);
+}
 
 body.dam-mobile.dam-forms .inline-group { margin: 0 0 12px; }
 body.dam-mobile.dam-forms .inline-group .tabular { overflow-x: auto; }

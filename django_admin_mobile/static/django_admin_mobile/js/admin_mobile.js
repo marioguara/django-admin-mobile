@@ -723,6 +723,99 @@
         closePanel();
     }
 
+    // ── Moduli: una sola barra di azioni in fondo ────────────────────────
+    var FORM = {};
+
+    /* Riserva in fondo al contenuto esattamente lo spazio occupato dalla
+     * barra. Un valore fisso sbaglia sempre: la barra cambia altezza con la
+     * lingua, con il numero di bottoni e con la tacca del telefono. */
+    function syncSubmitRow() {
+        var row = FORM.row;
+        if (!row || !document.body.classList.contains("dam-mobile")) {
+            document.documentElement.style.removeProperty("--dam-submitrow-h");
+            return;
+        }
+        document.documentElement.style.setProperty(
+            "--dam-submitrow-h", row.offsetHeight + "px"
+        );
+    }
+
+    /** L'azione principale: quella che Django marca come predefinita. */
+    function primaryAction(row, controls) {
+        return row.querySelector("input.default, button.default") ||
+            row.querySelector('[name="_save"]') ||
+            row.querySelector('[name="_continue"]') ||
+            controls[0];
+    }
+
+    function formOn() {
+        var row = document.querySelector(".submit-row");
+        if (!row) { return; }
+        FORM.row = row;
+        document.body.classList.add("dam-has-submitrow");
+        if (KIND === "form") { document.body.classList.add("dam-editing"); }
+
+        if (!FORM.ready) {
+            var controls = Array.prototype.slice.call(row.querySelectorAll(
+                'input[type="submit"], button[type="submit"], a.deletelink, a.closelink'
+            ));
+            if (!controls.length) { FORM.ready = true; syncSubmitRow(); return; }
+
+            var primary = primaryAction(row, controls);
+            primary.classList.add("dam-primary");
+
+            var others = controls.filter(function (c) { return c !== primary; });
+            // L'eliminazione va in fondo: è quella da cui si torna indietro peggio.
+            others.sort(function (a, b) {
+                return (a.classList.contains("deletelink") ? 1 : 0) -
+                    (b.classList.contains("deletelink") ? 1 : 0);
+            });
+
+            var form = closest(row, "form");
+            if (others.length && form && form.id) {
+                // Spostare un bottone fuori dal <form> lo scollegherebbe:
+                // l'attributo form= lo riaggancia, e così resta un bottone
+                // vero (niente copie che perderebbero il proprio name).
+                if (!FORM.sheet) { FORM.sheet = buildSheet(L.actions || "Azioni"); }
+                each(others, function (control) {
+                    if (control.tagName === "INPUT" || control.tagName === "BUTTON") {
+                        control.setAttribute("form", form.id);
+                    }
+                    control.classList.add("dam-sheet-action");
+                    park(control, FORM.sheet.damBody);
+                    control.addEventListener("click", closePanel);
+                });
+                var more = el("button", "dam-more", "⋯");
+                more.type = "button";
+                more.setAttribute("aria-label", L.actions || "Azioni");
+                more.setAttribute("aria-haspopup", "dialog");
+                more.addEventListener("click", function () { showPanel(FORM.sheet); });
+                row.appendChild(more);
+                FORM.more = more;
+                FORM.others = others;
+                document.body.classList.add("dam-actions-sheet");
+            }
+            FORM.ready = true;
+        }
+
+        syncSubmitRow();
+        if (!FORM.observer && window.ResizeObserver) {
+            FORM.observer = new window.ResizeObserver(syncSubmitRow);
+            FORM.observer.observe(row);
+        }
+    }
+
+    function formOff() {
+        document.body.classList.remove("dam-has-submitrow", "dam-editing", "dam-actions-sheet");
+        if (FORM.more) { FORM.more.hidden = true; }
+        each(FORM.others, function (control) {
+            control.removeAttribute("form");
+            control.classList.remove("dam-sheet-action");
+            unpark(control);
+        });
+        syncSubmitRow();
+    }
+
     // ── Schermata iniziale ───────────────────────────────────────────────
     /* Se il progetto ha una sua dashboard senza griglia di icone, la
      * costruiamo qui dai dati del menu: così anche un admin personalizzato
@@ -803,7 +896,7 @@
         if (F.forms) { body.classList.add("dam-forms"); }
         if (!S.appbar) { body.classList.add("dam-no-appbar"); }
         if (!S.tabbar) { body.classList.add("dam-no-tabbar"); }
-        if (document.querySelector(".submit-row")) { body.classList.add("dam-has-submitrow"); }
+        if (F.forms) { formOn(); }
 
         if (KIND === "changelist") { changelistOn(); }
         if (KIND === "index") { homeOn(); }
@@ -811,9 +904,10 @@
 
     function leaveMobile() {
         var body = document.body;
+        formOff();
         body.classList.remove(
             "dam-mobile", "dam-hide-chrome", "dam-forms",
-            "dam-no-appbar", "dam-no-tabbar", "dam-has-submitrow"
+            "dam-no-appbar", "dam-no-tabbar"
         );
         if (KIND === "changelist") { changelistOff(); }
         if (KIND === "index") { homeOff(); }
@@ -827,6 +921,9 @@
     document.addEventListener("keydown", function (event) {
         if (event.key === "Escape") { closePanel(); }
     });
+
+    window.addEventListener("resize", syncSubmitRow);
+    window.addEventListener("orientationchange", syncSubmitRow);
 
     registerServiceWorker();
     apply();

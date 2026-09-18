@@ -14,7 +14,7 @@ l'admin esistente:
 | **Schermata home** | le sezioni come icone, in stile schermata di un telefono |
 | **Elenchi** | righe a schede con etichette di colonna, riga toccabile, ricerca sempre visibile, filtri in un pannello che sale dal basso, bottone flottante per aggiungere |
 | **Azioni di massa** | nascoste finché non selezioni delle righe, poi salgono dal basso |
-| **Moduli** | campi a tutta larghezza, barra di salvataggio fissa in fondo, nessun campo che sfonda lo schermo |
+| **Moduli** | campi a tutta larghezza, una sola riga di azioni in fondo (le secondarie dietro «⋯»), nessun campo coperto né sfondato |
 | **Installazione** | l'admin si aggiunge alla schermata iniziale e si apre a tutto schermo, come un'app |
 | **Menu modificabile** | chi usa il gestionale sposta le voci trascinandole, cambia le icone e sceglie cosa mettere nella barra in basso |
 
@@ -236,6 +236,11 @@ Se la tabella non è ancora migrata il pacchetto usa i default senza errori.
   accesso** non ricevono la shell.
 - **L'invito a installare** non compare sulle pagine con la barra di
   salvataggio fissa, per non coprirla.
+- **Le azioni secondarie di un modulo** escono dal `<form>` ma restano
+  agganciate con l'attributo `form=`: continuano a inviare il proprio `name`.
+  Se il modulo non ha un `id` non viene spostato niente.
+- **Mentre si compila un modulo** la barra delle azioni prende il posto della
+  barra di navigazione: lo spazio in fondo allo schermo è poco.
 - **Il tema** usa le stesse chiavi di `theme.js` di Django, quindi la scelta
   fatta dal menu laterale vale anche da computer.
 
