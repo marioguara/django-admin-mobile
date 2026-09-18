@@ -1278,3 +1278,56 @@ body.dam-mobile.dam-cards #result_list tbody th > * {
     overflow-wrap: anywhere;
     max-width: 100%;
 }
+
+/* --------------------------------------------------------------------------
+   11. Invito a installare l'app
+   Si appoggia sopra la barra di navigazione e sparisce quando c'è un
+   pannello aperto, così non copre mai i comandi.
+   -------------------------------------------------------------------------- */
+.dam-install { display: none; }
+
+body.dam-mobile .dam-install {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--dam-tabbar-h) + var(--dam-safe-bottom));
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 14px;
+    box-sizing: border-box;
+    background: var(--dam-accent);
+    color: var(--dam-on-accent);
+    z-index: 1150;
+    box-shadow: 0 -4px 18px rgba(0, 0, 0, .24);
+}
+body.dam-mobile.dam-no-tabbar .dam-install { bottom: var(--dam-safe-bottom); }
+body.dam-locked .dam-install,
+body.dam-selection .dam-install,
+/* Nei moduli la barra di salvataggio sta esattamente lì: l'invito a
+   installare non deve coprirla. Resta comunque la voce nel menu laterale. */
+body.dam-has-submitrow .dam-install { display: none !important; }
+
+.dam-install-text { flex: 1 1 180px; min-width: 0; line-height: 1.35; }
+.dam-install-text strong { display: block; font-size: 15px; }
+.dam-install-text span { display: block; font-size: 12px; opacity: .88; }
+
+.dam-install-actions { flex: 0 0 auto; display: flex; gap: 8px; }
+.dam-install-yes,
+.dam-install-no {
+    min-height: 42px;
+    padding: 0 16px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.dam-install-yes { border: 0; background: #fff; color: var(--dam-accent); }
+.dam-install-no {
+    border: 1px solid rgba(255, 255, 255, .5);
+    background: transparent;
+    color: inherit;
+    font-weight: 600;
+}

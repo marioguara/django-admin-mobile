@@ -16,6 +16,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
+from .. import pwa as pwa_module
 from ..conf import get_config
 from ..menu import (  # noqa: F401  (riesportati per compatibilità)
     DEFAULT_APP_ICONS,
@@ -61,9 +62,11 @@ def mobile_admin_config(context):
 @register.inclusion_tag("django_admin_mobile/_mobile_assets.html", takes_context=True)
 def mobile_admin_assets(context):
     """CSS, dati del menu e JavaScript della shell mobile."""
+    config = get_config()
     return {
         "dam_config": _config_script(context),
-        "accent": get_config().get("ACCENT"),
+        "accent": config.get("ACCENT"),
+        "pwa": pwa_module.context(config),
     }
 
 

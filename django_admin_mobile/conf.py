@@ -46,6 +46,24 @@ DEFAULTS = {
     "APP_ICONS": {},
     # Icona usata quando non se ne trova una più specifica.
     "FALLBACK_ICON": "📄",
+
+    # ── Installazione come app (PWA) ──────────────────────────────────────
+    # Richiede di includere django_admin_mobile.urls negli URL del progetto.
+    "PWA": True,
+    "PWA_PROMPT": True,          # mostra l'invito a installare su telefono
+    "PWA_NAME": None,            # None = TITLE
+    "PWA_SHORT_NAME": None,      # None = le prime parole di PWA_NAME
+    "PWA_DESCRIPTION": "",
+    # Icone: percorsi statici ("img/icona-192.png") oppure indirizzi assoluti.
+    # Senza icone il pacchetto ne genera una con il colore e l'iniziale.
+    "PWA_ICONS": [],
+    "PWA_START_URL": None,       # None = pagina iniziale dell'admin
+    "PWA_SCOPE": None,           # None = pagina iniziale dell'admin
+    "PWA_DISPLAY": "standalone",
+    "PWA_ORIENTATION": "portrait",
+    "PWA_BACKGROUND": "#ffffff",
+    # Cambia questo valore per invalidare la cache del service worker.
+    "PWA_CACHE_VERSION": "1",
 }
 
 

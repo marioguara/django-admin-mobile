@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-admin-mobile"
-version = "0.2.0"
+version = "0.3.0"
 description = "L'admin di Django come una normale app per telefono: barra in alto, barra di navigazione in basso, menu laterale, elenchi a schede."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -12,7 +12,7 @@ requires-python = ">=3.9"
 authors = [
     { name = "django-admin-mobile contributors" },
 ]
-keywords = ["django", "admin", "mobile", "responsive", "pwa"]
+keywords = ["django", "admin", "mobile", "responsive", "pwa", "offline"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Web Environment",

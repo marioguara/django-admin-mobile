@@ -1,0 +1,136 @@
+/* Pagina "Organizza il menu": elenco riordinabile col dito o con le frecce. */
+
+.dam-reorder-intro {
+    margin: 0 0 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--dam-surface-2, #f2f4f7);
+    color: var(--dam-muted, #667079);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.dam-reorder {
+    list-style: none;
+    margin: 0 0 16px;
+    padding: 0;
+    counter-reset: dam-row;
+}
+
+.dam-sortable {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 0 0 8px;
+    padding: 10px;
+    box-sizing: border-box;
+    border: 1px solid var(--dam-border, #e2e6ea);
+    border-radius: 14px;
+    background: var(--dam-surface, #fff);
+    box-shadow: 0 1px 2px rgba(16, 24, 32, .05);
+    /* Il trascinamento cambia solo la posizione: niente animazioni che
+       facciano "scappare" la riga sotto il dito. */
+    touch-action: pan-y;
+}
+
+.dam-sortable.dam-dragging {
+    opacity: .92;
+    border-color: var(--dam-accent, #417690);
+    box-shadow: 0 8px 24px rgba(16, 24, 32, .18);
+}
+
+.dam-sortable.dam-off { opacity: .55; }
+.dam-sortable.dam-just-moved { border-color: var(--dam-accent, #417690); }
+
+.dam-grip {
+    flex: 0 0 auto;
+    width: 40px;
+    height: 44px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--dam-surface-2, #f2f4f7);
+    color: var(--dam-muted, #667079);
+    font-size: 20px;
+    line-height: 1;
+    cursor: grab;
+    /* Senza questo il browser interpreta il trascinamento come scorrimento
+       della pagina e la riga non si muove mai. */
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.dam-grip:active { cursor: grabbing; background: var(--dam-accent, #417690); color: #fff; }
+
+.dam-icon-cell { flex: 0 0 auto; margin: 0; }
+.dam-icon-input {
+    width: 56px;
+    height: 44px;
+    padding: 0;
+    text-align: center;
+    font-size: 22px;
+    line-height: 1;
+    border: 1px solid var(--dam-border, #e2e6ea);
+    border-radius: 10px;
+    background: var(--dam-surface, #fff);
+    color: var(--dam-text, #1f2328);
+    box-sizing: border-box;
+}
+
+.dam-sort-text { flex: 1 1 90px; min-width: 0; display: block; }
+.dam-sort-text strong {
+    display: block;
+    font-size: 15px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.dam-sort-text small {
+    display: block;
+    font-size: 11px;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    color: var(--dam-muted, #667079);
+}
+
+.dam-sort-moves { flex: 0 0 auto; display: flex; gap: 4px; }
+.dam-move {
+    width: 38px;
+    height: 40px;
+    border: 1px solid var(--dam-border, #e2e6ea);
+    border-radius: 10px;
+    background: var(--dam-surface, #fff);
+    color: var(--dam-text, #1f2328);
+    font-size: 16px;
+    cursor: pointer;
+}
+.dam-move:hover { background: var(--dam-surface-2, #f2f4f7); }
+.dam-move[disabled] { opacity: .35; cursor: default; }
+
+.dam-sort-flags { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.dam-flag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--dam-muted, #667079);
+    cursor: pointer;
+}
+.dam-flag input { width: 20px; height: 20px; margin: 0; }
+
+.dam-sr {
+    position: absolute;
+    width: 1px; height: 1px;
+    margin: -1px; padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Su schermi larghi le due caselle stanno sulla stessa riga del nome. */
+@media (min-width: 700px) {
+    .dam-sortable { flex-wrap: nowrap; }
+    .dam-sort-flags { flex: 0 0 auto; }
+}
+
+.dam-reorder-submit { border-radius: 12px; }

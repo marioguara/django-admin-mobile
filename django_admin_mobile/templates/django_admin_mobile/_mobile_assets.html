@@ -1,4 +1,13 @@
 {% load static %}
 <link rel="stylesheet" href="{% static 'django_admin_mobile/css/admin_mobile.css' %}">
+{% if pwa %}{# Installazione come app: manifest e indicazioni per iOS #}
+<link rel="manifest" href="{{ pwa.manifest_url }}">
+<meta name="theme-color" content="{{ pwa.theme_color }}">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="{{ pwa.short_name }}">
+{% if pwa.apple_icon %}<link rel="apple-touch-icon" href="{{ pwa.apple_icon }}">{% endif %}
+{% endif %}
 {{ dam_config }}
 <script src="{% static 'django_admin_mobile/js/admin_mobile.js' %}" defer></script>

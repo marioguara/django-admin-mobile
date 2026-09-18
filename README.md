@@ -15,6 +15,8 @@ l'admin esistente:
 | **Elenchi** | righe a schede con etichette di colonna, riga toccabile, ricerca sempre visibile, filtri in un pannello che sale dal basso, bottone flottante per aggiungere |
 | **Azioni di massa** | nascoste finché non selezioni delle righe, poi salgono dal basso |
 | **Moduli** | campi a tutta larghezza, barra di salvataggio fissa in fondo, nessun campo che sfonda lo schermo |
+| **Installazione** | l'admin si aggiunge alla schermata iniziale e si apre a tutto schermo, come un'app |
+| **Menu modificabile** | chi usa il gestionale sposta le voci trascinandole, cambia le icone e sceglie cosa mettere nella barra in basso |
 
 Da computer non cambia nulla: l'admin resta quello di Django.
 
@@ -50,7 +52,17 @@ python manage.py migrate django_admin_mobile
 Se il progetto **non** ha un suo `templates/admin/base.html`, non serve altro:
 il template `admin/index.html` del pacchetto include già tutto.
 
-Se invece il progetto sovrascrive `admin/base.html` (o vuoi la shell anche
+Per rendere l'admin installabile come app, includi anche gli URL del
+pacchetto (facoltativo: senza, tutto il resto funziona lo stesso):
+
+```python
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("admin-mobile/", include("django_admin_mobile.urls")),
+]
+```
+
+Se il progetto sovrascrive `admin/base.html` (o vuoi la shell anche
 sulle pagine che non passano dall'index), aggiungi una riga nel `<head>`:
 
 ```django
@@ -84,6 +96,20 @@ ADMIN_MOBILE = {
     "APP_ICONS": {},            # {"fatture": "🧾"}
     "FALLBACK_ICON": "📄",
 
+    # Installazione come app
+    "PWA": True,
+    "PWA_PROMPT": True,          # invito a installare, su telefono
+    "PWA_NAME": None,            # None = TITLE
+    "PWA_SHORT_NAME": None,      # None = le prime parole del nome
+    "PWA_DESCRIPTION": "",
+    "PWA_ICONS": [],             # vedi sotto
+    "PWA_START_URL": None,       # None = pagina iniziale dell'admin
+    "PWA_SCOPE": None,
+    "PWA_DISPLAY": "standalone",
+    "PWA_ORIENTATION": "portrait",
+    "PWA_BACKGROUND": "#ffffff",
+    "PWA_CACHE_VERSION": "1",    # cambialo per svuotare la cache
+
     # Componenti: si spengono uno per uno
     "APPBAR": True,
     "TABBAR": True,
@@ -96,14 +122,65 @@ ADMIN_MOBILE = {
 }
 ```
 
+### Installazione come app
+
+Con gli URL inclusi il pacchetto serve da solo il manifest, il service worker
+e una pagina di cortesia per quando manca la rete. Su Android compare un
+invito a installare in fondo allo schermo; su iPhone la voce **Installa
+l'app** nel menu laterale spiega come fare dal tasto Condividi. In entrambi i
+casi la voce resta nel menu laterale anche dopo aver chiuso l'invito.
+
+Il service worker è servito da una vista, non da `/static/`: solo così può
+mandare l'intestazione `Service-Worker-Allowed` e governare le pagine
+dell'admin. Usa **sempre la rete** e la cache solo quando la rete manca: in un
+gestionale un dato vecchio fa più danno di un caricamento lento.
+
+Le icone: senza `PWA_ICONS` il pacchetto ne genera una con il colore dell'app
+e l'iniziale del nome, utile per partire. Per un risultato curato dichiara dei
+PNG veri:
+
+```python
+ADMIN_MOBILE = {
+    "PWA_ICONS": [
+        {"src": "img/app-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+        {"src": "img/app-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
+        {"src": "img/app-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    ],
+}
+```
+
+`src` accetta sia un percorso statico sia un indirizzo completo. Ricorda che i
+browser propongono l'installazione solo su HTTPS (in sviluppo vale anche
+`localhost`).
+
+### Organizza il menu, senza toccare il codice
+
+*Admin Mobile → Icone menu mobile → **Organizza il menu*** apre una pagina
+dove chi usa il gestionale può, da solo:
+
+- **spostare** le voci trascinandole per la maniglia (funziona col dito,
+  perché usa i Pointer Events e non il drag-and-drop HTML5) oppure con le
+  frecce su/giù, che restano l'unica via da tastiera;
+- **cambiare l'icona** scrivendo un'altra emoji;
+- **nascondere** una voce dal menu;
+- metterla **In evidenza**, cioè nella barra in basso.
+
+L'elenco mostra tutte le voci del menu, comprese quelle che non hanno ancora
+una configurazione salvata: il record viene creato al primo salvataggio.
+
 ### Barra in basso
 
-Senza `TABS` la barra si costruisce da sola: *Home*, le voci marcate **In
-evidenza** nelle icone del menu (o le prime dell'elenco, se non ne hai
-marcata nessuna) e *Menu*.
+Ordine di precedenza:
 
-Con `TABS` decidi tu, e puoi puntare a qualunque URL del progetto, non solo a
-pagine dell'admin:
+1. le voci marcate **In evidenza** dalla pagina qui sopra;
+2. `TABS` nei settings;
+3. le prime voci del menu, così la barra non è mai vuota.
+
+In pratica: `TABS` è il valore di partenza che decidi tu, e resta valido
+finché nessuno sceglie qualcosa dal pannello.
+
+Con `TABS` puoi puntare a qualunque URL del progetto, non solo a pagine
+dell'admin:
 
 ```python
 ADMIN_MOBILE = {
@@ -122,10 +199,9 @@ prefisso più lungo dell'indirizzo corrente (la home si confronta per intero).
 
 ### Icone, dal pannello admin
 
-La sezione **Admin Mobile → Icone menu mobile** permette al cliente di
-cambiare icona, colori, nome, ordine e visibilità di ogni voce senza toccare
-il codice, e di marcare le voci **In evidenza** che finiscono nella barra in
-basso.
+La sezione **Admin Mobile → Icone menu mobile** è la vista completa, con
+anche i colori e il nome da mostrare. Per il solo riordino conviene la pagina
+*Organizza il menu* descritta sopra.
 
 Ordine con cui si sceglie l'icona di una voce:
 
@@ -158,6 +234,8 @@ Se la tabella non è ancora migrata il pacchetto usa i default senza errori.
   selezioni qualcosa.
 - **Le finestre pop-up** (selettore di chiave esterna) e la **pagina di
   accesso** non ricevono la shell.
+- **L'invito a installare** non compare sulle pagine con la barra di
+  salvataggio fissa, per non coprirla.
 - **Il tema** usa le stesse chiavi di `theme.js` di Django, quindi la scelta
   fatta dal menu laterale vale anche da computer.
 

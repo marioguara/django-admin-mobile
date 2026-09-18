@@ -15,6 +15,7 @@ from django.db import DatabaseError
 from django.urls import NoReverseMatch, reverse
 from django.utils.encoding import force_str
 
+from . import pwa as pwa_module
 from .conf import get_config
 from .models import MenuIcon
 
@@ -47,9 +48,14 @@ DEFAULT_BG = "#ffffff"
 
 
 def _load_icons():
-    """Icone configurate a database, tolleranti alla tabella non ancora creata."""
+    """Icone configurate a database, tolleranti alla tabella non ancora creata.
+
+    Si caricano anche quelle marcate non visibili: servono a sapere che una
+    voce va nascosta. Filtrandole qui, la voce ricadrebbe sui valori di
+    default e resterebbe visibile — che è esattamente il contrario.
+    """
     try:
-        return MenuIcon.objects.filter(visible=True).as_map()
+        return MenuIcon.objects.all().as_map()
     except DatabaseError:
         # Migrazione non ancora applicata (o database non raggiungibile):
         # la shell deve comunque funzionare con i default.
@@ -82,12 +88,17 @@ def _reverse(url_name, args=None):
         return None
 
 
-def build_items(app_list, config=None):
+def build_items(app_list, config=None, include_hidden=False):
     """Appiattisce ``app_list`` in un elenco ordinato di voci di menu.
 
     Ogni voce è un dizionario con: ``label``, ``url``, ``icon``, ``color``,
-    ``background``, ``order``, ``pinned``, ``app_label``, ``app_name`` e
-    ``add_url`` (``None`` se l'utente non può aggiungere).
+    ``background``, ``order``, ``pinned``, ``visible``, ``app_label``,
+    ``app_name``, ``model_name`` e ``add_url`` (``None`` se l'utente non può
+    aggiungere).
+
+    Le voci marcate non visibili vengono escluse; ``include_hidden=True`` le
+    mantiene, ed è quello che serve alla pagina «Organizza il menu», l'unico
+    posto da cui si possono riaccendere.
     """
     config = config or get_config()
     icons = _load_icons()
@@ -109,6 +120,9 @@ def build_items(app_list, config=None):
                 # Modello senza alcuna pagina raggiungibile: inutile mostrarlo.
                 continue
             cfg = _resolve(icons, app_label, model_key)
+            visible = cfg.visible if cfg else True
+            if not visible and not include_hidden:
+                continue
             label = cfg.label_override if cfg and cfg.label_override else (model.get("name") or model_key)
             items.append(
                 {
@@ -120,8 +134,10 @@ def build_items(app_list, config=None):
                     "background": _text(cfg.background if cfg else DEFAULT_BG),
                     "order": (cfg.order if cfg else 0),
                     "pinned": bool(cfg.pinned) if cfg else False,
+                    "visible": bool(visible),
                     "app_label": _text(app_label),
                     "app_name": _text(app_name),
+                    "model_name": model_key,
                 }
             )
 
@@ -145,13 +161,25 @@ def build_groups(items):
 def build_tabs(items, config=None, home_url="/admin/"):  # noqa: C901
     """Voci della barra in basso.
 
-    Se ``ADMIN_MOBILE["TABS"]`` è valorizzato vince quello (e può puntare a
-    qualsiasi URL del progetto, non solo a pagine dell'admin). Altrimenti si
-    usano le voci marcate "in evidenza"; se non ce n'è nessuna si prendono le
-    prime dell'elenco, così la barra non è mai vuota.
+    Ordine di precedenza:
+
+    1. le voci marcate "in evidenza" dal pannello (modello ``MenuIcon``);
+    2. ``ADMIN_MOBILE["TABS"]``, che può puntare a qualsiasi URL del progetto;
+    3. le prime voci dell'elenco, così la barra non è mai vuota.
     """
     config = config or get_config()
     max_tabs = max(2, int(config.get("MAX_TABS") or 5))
+    home = {"label": "Home", "url": home_url, "icon": "🏠", "match": home_url, "exact": True}
+
+    # Se qualcuno ha marcato delle voci "in evidenza" dal pannello, quella
+    # scelta vale più di TABS: le impostazioni sono il valore di partenza,
+    # il database è la decisione di chi usa il gestionale.
+    pinned = [i for i in items if i["pinned"]]
+    if pinned:
+        return [home] + [
+            {"label": i["label"], "url": i["url"], "icon": i["icon"], "match": i["url"]}
+            for i in pinned[: max_tabs - 2]
+        ]
 
     explicit = config.get("TABS") or []
     if explicit:
@@ -177,10 +205,8 @@ def build_tabs(items, config=None, home_url="/admin/"):  # noqa: C901
             tabs.append(tab)
         return tabs[:max_tabs]
 
-    home = {"label": "Home", "url": home_url, "icon": "🏠", "match": home_url, "exact": True}
-    pinned = [i for i in items if i["pinned"]]
-    chosen = pinned or items
     slots = max_tabs - 2  # una per Home, una per Menu
+    chosen = items
     tabs = [home]
     for item in chosen[:slots]:
         tabs.append(
@@ -207,8 +233,12 @@ def build_menu(context=None, app_list=None, config=None):
 
     user = context.get("user")
     username = ""
+    can_reorder = False
     if user is not None and getattr(user, "is_authenticated", False):
         username = force_str(user.get_short_name() or user.get_username())
+        can_reorder = bool(user.has_perm("django_admin_mobile.change_menuicon"))
+
+    reorder_url = _reverse("admin:django_admin_mobile_menuicon_reorder") if can_reorder else None
 
     return {
         "breakpoint": config.get("BREAKPOINT"),
@@ -229,7 +259,9 @@ def build_menu(context=None, app_list=None, config=None):
             "site": context.get("site_url") or "/",
             "password": _reverse("admin:password_change"),
             "logout": _reverse("admin:logout"),
+            "reorder": reorder_url,
         },
+        "pwa": pwa_module.context(config),
         "user": {"name": _text(username), "initial": (username[:1] or "?").upper()},
         "tabs": build_tabs(items, config=config, home_url=home_url),
         "groups": build_groups(items),
@@ -249,6 +281,13 @@ def build_menu(context=None, app_list=None, config=None):
             "theme": "Tema",
             "noResults": "Nessuna sezione trovata.",
             "allSections": "Tutte le sezioni",
+            "reorder": "Organizza il menu",
+            "install": "Installa l'app",
+            "installTitle": "Installa sul telefono",
+            "installBody": "Aggiungila alla schermata iniziale: si apre come una normale app, a tutto schermo.",
+            "installNow": "Installa",
+            "later": "Non ora",
+            "installIos": "Tocca il tasto Condividi in basso, poi «Aggiungi alla schermata Home».",
             "selected": "selezionati",
         },
     }

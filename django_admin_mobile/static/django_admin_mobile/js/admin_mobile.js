@@ -125,9 +125,12 @@
     // ── Titolo della barra in alto ───────────────────────────────────────
     function pageTitle() {
         if (KIND === "index") { return CFG.title || "Admin"; }
-        if (CURRENT) { return CURRENT.label; }
+        // Negli elenchi il titolo di Django ("Scegli X da modificare") è
+        // troppo lungo per una barra: si usa il nome della sezione.
+        if (KIND === "changelist" && CURRENT) { return CURRENT.label; }
         var h1 = document.querySelector("#content > h1, #content h1");
         if (h1 && h1.textContent.trim()) { return h1.textContent.trim(); }
+        if (CURRENT) { return CURRENT.label; }
         return (document.title || "").split("|")[0].trim() || CFG.title || "Admin";
     }
 
@@ -165,6 +168,115 @@
             window.setTimeout(function () { focusTarget.focus(); }, 60);
         }
     }
+
+    // ── Installazione come app ───────────────────────────────────────────
+    var PWA = CFG.pwa || null;
+    var installEvent = null;     // evento "beforeinstallprompt" messo da parte
+
+    function store(key, value) {
+        try {
+            if (value === undefined) { return window.localStorage.getItem(key); }
+            window.localStorage.setItem(key, value);
+        } catch (err) { /* spazio negato: si prosegue senza ricordare */ }
+        return null;
+    }
+
+    function isStandalone() {
+        return window.matchMedia("(display-mode: standalone)").matches ||
+            window.navigator.standalone === true;
+    }
+
+    function isIos() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    }
+
+    /** Installabile davvero, oppure installabile a mano come su iPhone. */
+    function installable() {
+        if (!PWA || isStandalone()) { return false; }
+        return !!installEvent || isIos();
+    }
+
+    function registerServiceWorker() {
+        if (!PWA || !PWA.sw_url || !("serviceWorker" in navigator)) { return; }
+        navigator.serviceWorker.register(PWA.sw_url, { scope: PWA.scope })
+            .catch(function () {
+                // Senza service worker l'admin funziona identico: non si
+                // installa e basta. Non vale la pena disturbare l'utente.
+            });
+    }
+
+    function iosHelp() {
+        if (!S.installSheet) {
+            S.installSheet = buildSheet(L.installTitle || "Installa");
+            var text = el("p", "dam-sheet-hint", L.installIos || "");
+            S.installSheet.damBody.appendChild(text);
+        }
+        showPanel(S.installSheet);
+    }
+
+    function install() {
+        if (installEvent) {
+            installEvent.prompt();
+            installEvent.userChoice.then(function () {
+                installEvent = null;
+                hideInstallBanner();
+            });
+            return;
+        }
+        if (isIos()) { iosHelp(); }
+    }
+
+    function hideInstallBanner() {
+        if (S.installBanner) { S.installBanner.hidden = true; }
+    }
+
+    function showInstallBanner() {
+        if (!PWA || !PWA.prompt || !installable()) { return; }
+        if (store("dam-install-dismissed") === "1") { return; }
+        if (!document.body.classList.contains("dam-mobile")) { return; }
+
+        if (!S.installBanner) {
+            var banner = el("div", "dam-install");
+            var body = el("div", "dam-install-text");
+            body.appendChild(el("strong", null, L.installTitle || "Installa"));
+            body.appendChild(el("span", null, L.installBody || ""));
+            banner.appendChild(body);
+
+            var actions = el("div", "dam-install-actions");
+            var yes = el("button", "dam-install-yes", L.installNow || "Installa");
+            yes.type = "button";
+            yes.addEventListener("click", install);
+            var no = el("button", "dam-install-no", L.later || "Non ora");
+            no.type = "button";
+            no.addEventListener("click", function () {
+                store("dam-install-dismissed", "1");
+                hideInstallBanner();
+            });
+            actions.appendChild(yes);
+            actions.appendChild(no);
+            banner.appendChild(actions);
+
+            document.body.appendChild(banner);
+            S.installBanner = banner;
+        }
+        S.installBanner.hidden = false;
+    }
+
+    window.addEventListener("beforeinstallprompt", function (event) {
+        // Senza preventDefault Chrome mostra il suo invito, che sul telefono
+        // finisce sopra la barra di navigazione.
+        event.preventDefault();
+        installEvent = event;
+        showInstallBanner();
+        if (S.installLink) { S.installLink.hidden = false; }
+    });
+
+    window.addEventListener("appinstalled", function () {
+        installEvent = null;
+        store("dam-install-dismissed", "1");
+        hideInstallBanner();
+        if (S.installLink) { S.installLink.hidden = true; }
+    });
 
     // ── Costruzione della shell ──────────────────────────────────────────
     var S = {};   // elementi della shell
@@ -408,6 +520,23 @@
             pwd.appendChild(el("span", "dam-link-icon", "🔑"));
             pwd.appendChild(el("span", "dam-link-label", L.password || "Cambia password"));
             foot.appendChild(pwd);
+        }
+        if (U.reorder) {
+            var reorder = el("a", "dam-link");
+            reorder.href = U.reorder;
+            reorder.appendChild(el("span", "dam-link-icon", "🧩"));
+            reorder.appendChild(el("span", "dam-link-label", L.reorder || "Organizza il menu"));
+            foot.appendChild(reorder);
+        }
+        if (PWA) {
+            var installLink = el("button", "dam-link");
+            installLink.type = "button";
+            installLink.appendChild(el("span", "dam-link-icon", "📲"));
+            installLink.appendChild(el("span", "dam-link-label", L.install || "Installa l'app"));
+            installLink.addEventListener("click", function () { closePanel(); install(); });
+            installLink.hidden = !installable();
+            foot.appendChild(installLink);
+            S.installLink = installLink;
         }
         foot.appendChild(buildThemeRow());
         var logout = buildLogout();
@@ -699,7 +828,9 @@
         if (event.key === "Escape") { closePanel(); }
     });
 
+    registerServiceWorker();
     apply();
+    showInstallBanner();
     if (mq.addEventListener) { mq.addEventListener("change", apply); }
     else if (mq.addListener) { mq.addListener(apply); }
 })();

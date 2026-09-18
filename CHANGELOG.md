@@ -6,6 +6,40 @@ e il progetto usa [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-18
+
+### Aggiunto
+- **Installazione come app.** Includendo `django_admin_mobile.urls` il
+  pacchetto serve manifest, service worker, un'icona di ripiego e una pagina
+  di cortesia per quando manca la rete; nel `<head>` finiscono il collegamento
+  al manifest e le indicazioni per iOS. Su Android compare un invito a
+  installare in fondo allo schermo, su iPhone la voce «Installa l'app» nel
+  menu laterale spiega come fare. Undici nuove chiavi `PWA_*`.
+  Il service worker è servito da una vista proprio per poter mandare
+  `Service-Worker-Allowed`: da `/static/` non potrebbe governare `/admin/`.
+  Strategia: sempre la rete, la cache solo quando la rete manca.
+- **Pagina «Organizza il menu»** (*Icone menu mobile → Organizza il menu*):
+  si spostano le voci trascinandole per la maniglia o con le frecce su/giù, si
+  cambia l'icona, si nasconde una voce e si sceglie cosa mettere nella barra
+  in basso. Il trascinamento usa i Pointer Events, quindi funziona col dito;
+  le frecce restano per chi usa la tastiera. L'elenco mostra anche le voci
+  che non hanno ancora una configurazione salvata.
+- `build_items(..., include_hidden=True)` e campo `visible` nelle voci.
+
+### Modificato
+- La barra in basso segue ora questo ordine: voci «in evidenza» scelte dal
+  pannello, poi `TABS` dei settings, poi le prime voci. Le impostazioni
+  restano il valore di partenza, la scelta fatta dal pannello vince.
+- Il titolo nella barra in alto usa l'intestazione della pagina quando c'è
+  (prima una pagina secondaria mostrava il nome della sezione).
+
+### Corretto
+- **`visible = False` ora nasconde davvero la voce.** Le configurazioni
+  venivano caricate filtrando `visible=True`: la voce nascosta non trovava
+  configurazione e ricadeva sui valori di default, restando visibile.
+- L'invito a installare non compare più sulle pagine con la barra di
+  salvataggio fissa, che copriva.
+
 ## [0.2.0] - 2026-09-18
 
 Il pacchetto non è più solo una griglia di icone: su telefono costruisce una

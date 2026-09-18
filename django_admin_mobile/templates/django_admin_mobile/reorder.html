@@ -1,0 +1,72 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'django_admin_mobile/css/reorder.css' %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+    &rsaquo; <a href="{{ changelist_url }}">{{ opts.verbose_name_plural|capfirst }}</a>
+    &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <p class="dam-reorder-intro">
+        Trascina le voci con la maniglia <span aria-hidden="true">⠿</span> per cambiarne
+        l'ordine, oppure usa le frecce. L'ordine vale per la schermata iniziale
+        a icone e per il menu laterale.
+        <strong>In evidenza</strong> porta la voce nella barra in basso.
+    </p>
+
+    <form method="post" id="dam-reorder-form">
+        {% csrf_token %}
+        <ol class="dam-reorder" id="dam-reorder">
+            {% for item in items %}
+            <li class="dam-sortable{% if not item.visible %} dam-off{% endif %}" data-key="{{ item.key }}">
+                <button type="button" class="dam-grip" aria-label="Trascina per spostare {{ item.label }}">⠿</button>
+                <input type="hidden" name="entry" value="{{ item.key }}">
+
+                <label class="dam-icon-cell">
+                    <span class="dam-sr">Icona di {{ item.label }}</span>
+                    <input type="text" name="icon:{{ item.key }}" value="{{ item.icon }}"
+                           maxlength="16" inputmode="text" autocomplete="off" class="dam-icon-input">
+                </label>
+
+                <span class="dam-sort-text">
+                    <strong>{{ item.label }}</strong>
+                    <small>{{ item.app_name }}</small>
+                </span>
+
+                <span class="dam-sort-moves">
+                    <button type="button" class="dam-move" data-dir="-1" aria-label="Sposta {{ item.label }} in alto">↑</button>
+                    <button type="button" class="dam-move" data-dir="1" aria-label="Sposta {{ item.label }} in basso">↓</button>
+                </span>
+
+                <span class="dam-sort-flags">
+                    <label class="dam-flag">
+                        <input type="checkbox" name="pinned" value="{{ item.key }}"{% if item.pinned %} checked{% endif %}>
+                        <span>In evidenza</span>
+                    </label>
+                    <label class="dam-flag">
+                        <input type="checkbox" name="visible" value="{{ item.key }}"{% if item.visible %} checked{% endif %}>
+                        <span>Visibile</span>
+                    </label>
+                </span>
+            </li>
+            {% empty %}
+            <li class="dam-sortable"><em>Nessuna voce di menu disponibile.</em></li>
+            {% endfor %}
+        </ol>
+
+        <div class="submit-row dam-reorder-submit">
+            <input type="submit" value="Salva ordine" class="default">
+            <a href="{{ changelist_url }}" class="closelink">Annulla</a>
+        </div>
+    </form>
+</div>
+<script src="{% static 'django_admin_mobile/js/reorder.js' %}" defer></script>
+{% endblock %}
