@@ -1,63 +1,705 @@
-/* django_admin_mobile
- * Comportamenti mobile:
- *  - Trasforma la tabella del changelist in card impilate (aggiunge attributi
- *    data-label alle celle così il CSS può mostrarli come label).
- *  - Aggiunge un FAB "Filtra" per aprire/chiudere il drawer dei filtri.
- */
+/* =========================================================================
+ * django-admin-mobile
+ * Costruisce sopra l'admin di Django la struttura di una normale app per
+ * telefono: barra in alto con titolo e tasto indietro, barra di navigazione
+ * in basso, menu laterale con ricerca, pannello dei filtri che sale dal
+ * basso, elenchi a schede e bottone flottante per aggiungere.
+ *
+ * Il menu arriva dal server dentro <script id="dam-config">: qui non si
+ * indovina niente sull'applicazione ospite.
+ *
+ * Gli spostamenti di nodi nel DOM sono reversibili: ogni nodo spostato
+ * lascia un segnaposto e torna al suo posto se si passa al desktop, così
+ * ruotare il telefono o allargare la finestra non rompe la pagina.
+ * ========================================================================= */
 (function () {
-    var MOBILE = window.matchMedia('(max-width: 1024px)');
+    "use strict";
 
-    function decorateChangelist() {
-        var table = document.querySelector('#result_list');
-        if (!table || table.dataset.damDecorated === '1') return;
-        var headers = Array.prototype.map.call(
-            table.querySelectorAll('thead th'),
-            function (th) { return (th.innerText || th.textContent || '').trim(); }
-        );
-        Array.prototype.forEach.call(table.querySelectorAll('tbody tr'), function (row) {
-            Array.prototype.forEach.call(row.children, function (cell, idx) {
-                if (headers[idx]) cell.setAttribute('data-label', headers[idx]);
-            });
-        });
-        table.dataset.damDecorated = '1';
-        document.body.classList.add('dam-cards');
+    if (window.__damShell) { return; }
+    window.__damShell = true;
+
+    // ── Configurazione ───────────────────────────────────────────────────
+    var CFG = null;
+    try {
+        var cfgEl = document.getElementById("dam-config");
+        if (cfgEl) { CFG = JSON.parse(cfgEl.textContent || cfgEl.innerText || "null"); }
+    } catch (err) {
+        CFG = null;
+    }
+    if (!CFG) { return; }
+
+    var F = CFG.features || {};
+    var L = CFG.labels || {};
+    var U = CFG.urls || {};
+    var BREAKPOINT = parseInt(CFG.breakpoint, 10) || 1024;
+    var mq = window.matchMedia("(max-width: " + BREAKPOINT + "px)");
+
+    if (/^#[0-9a-fA-F]{3,8}$/.test(CFG.accent || "")) {
+        document.documentElement.style.setProperty("--dam-accent", CFG.accent);
     }
 
-    function setupFilterDrawer() {
-        var filter = document.getElementById('changelist-filter');
-        if (!filter || document.querySelector('.dam-filter-fab')) return;
-        var fab = document.createElement('button');
-        fab.type = 'button';
-        fab.className = 'dam-filter-fab';
-        fab.textContent = '⚙ Filtri';
-        fab.addEventListener('click', function () {
-            filter.classList.toggle('dam-open');
+    // ── Utilità ──────────────────────────────────────────────────────────
+    function el(tag, cls, text) {
+        var node = document.createElement(tag);
+        if (cls) { node.className = cls; }
+        if (text !== undefined && text !== null) { node.textContent = text; }
+        return node;
+    }
+
+    function each(list, fn) { Array.prototype.forEach.call(list || [], fn); }
+
+    function closest(node, selector) {
+        while (node && node.nodeType === 1) {
+            if (node.matches && node.matches(selector)) { return node; }
+            node = node.parentNode;
+        }
+        return null;
+    }
+
+    /** Sposta un nodo lasciando un segnaposto per poterlo rimettere a posto. */
+    function park(node, parent) {
+        if (!node || !parent || node.damHome) { return; }
+        var mark = document.createComment("dam");
+        if (node.parentNode) { node.parentNode.insertBefore(mark, node); }
+        node.damHome = mark;
+        parent.appendChild(node);
+    }
+
+    function unpark(node) {
+        if (!node || !node.damHome) { return; }
+        var mark = node.damHome;
+        if (mark.parentNode) {
+            mark.parentNode.insertBefore(node, mark);
+            mark.parentNode.removeChild(mark);
+        }
+        node.damHome = null;
+    }
+
+    function cookie(name) {
+        var parts = ("; " + document.cookie).split("; " + name + "=");
+        return parts.length === 2 ? parts.pop().split(";").shift() : "";
+    }
+
+    /** Di tutte le voci, quella il cui indirizzo è il prefisso più lungo. */
+    function bestMatch(entries, getUrl) {
+        var path = window.location.pathname;
+        var best = null;
+        var bestLen = -1;
+        each(entries, function (entry) {
+            var url = getUrl(entry);
+            if (!url || url === "#") { return; }
+            if (path.indexOf(url) === 0 && url.length > bestLen) {
+                best = entry;
+                bestLen = url.length;
+            }
         });
-        document.body.appendChild(fab);
-        document.addEventListener('click', function (e) {
-            if (!filter.classList.contains('dam-open')) return;
-            if (filter.contains(e.target) || fab.contains(e.target)) return;
-            filter.classList.remove('dam-open');
+        return best;
+    }
+
+    function allItems() {
+        var items = [];
+        each(CFG.groups, function (group) {
+            each(group.items, function (item) { items.push(item); });
         });
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') filter.classList.remove('dam-open');
+        return items;
+    }
+
+    var ITEMS = allItems();
+    var CURRENT = bestMatch(ITEMS, function (i) { return i.url; });
+
+    // ── Tipo di pagina ───────────────────────────────────────────────────
+    function pageKind() {
+        var body = document.body;
+        if (body.classList.contains("popup") || window.name.indexOf("popup") === 0) { return "popup"; }
+        if (body.classList.contains("login") || document.getElementById("login-form")) { return "login"; }
+        if (document.getElementById("changelist")) { return "changelist"; }
+        if (window.location.pathname === U.home) { return "index"; }
+        if (body.classList.contains("dashboard")) { return "index"; }
+        if (document.querySelector(".submit-row")) { return "form"; }
+        return "other";
+    }
+
+    var KIND = pageKind();
+    if (KIND === "popup") { return; }
+
+    // ── Titolo della barra in alto ───────────────────────────────────────
+    function pageTitle() {
+        if (KIND === "index") { return CFG.title || "Admin"; }
+        if (CURRENT) { return CURRENT.label; }
+        var h1 = document.querySelector("#content > h1, #content h1");
+        if (h1 && h1.textContent.trim()) { return h1.textContent.trim(); }
+        return (document.title || "").split("|")[0].trim() || CFG.title || "Admin";
+    }
+
+    /** Indirizzo del livello superiore, letto dalle briciole di pane. */
+    function backHref() {
+        var links = document.querySelectorAll(".breadcrumbs a");
+        if (links.length >= 2) { return links[links.length - 1].href; }
+        if (links.length === 1 && KIND !== "index") { return links[0].href; }
+        return null;
+    }
+
+    // ── Pannelli: apertura, chiusura, tasto Esc ──────────────────────────
+    var openPanel = null;
+    var lastFocus = null;
+
+    function closePanel() {
+        if (!openPanel) { return; }
+        openPanel.classList.remove("dam-open");
+        if (S.scrim) { S.scrim.classList.remove("dam-open"); }
+        document.body.classList.remove("dam-locked");
+        openPanel = null;
+        if (lastFocus && lastFocus.focus) { lastFocus.focus(); }
+        lastFocus = null;
+    }
+
+    function showPanel(panel, focusTarget) {
+        if (!panel) { return; }
+        if (openPanel && openPanel !== panel) { closePanel(); }
+        lastFocus = document.activeElement;
+        panel.classList.add("dam-open");
+        if (S.scrim) { S.scrim.classList.add("dam-open"); }
+        document.body.classList.add("dam-locked");
+        openPanel = panel;
+        if (focusTarget && focusTarget.focus) {
+            window.setTimeout(function () { focusTarget.focus(); }, 60);
+        }
+    }
+
+    // ── Costruzione della shell ──────────────────────────────────────────
+    var S = {};   // elementi della shell
+
+    function buildScrim() {
+        var scrim = el("div", "dam-scrim");
+        scrim.addEventListener("click", closePanel);
+        document.body.appendChild(scrim);
+        return scrim;
+    }
+
+    function buildAppbar() {
+        var bar = el("header", "dam-appbar");
+        bar.setAttribute("role", "banner");
+
+        var lead = el("button", "dam-appbar-btn dam-appbar-lead");
+        lead.type = "button";
+        var back = backHref();
+        // Le pagine raggiungibili dalla barra in basso sono destinazioni di
+        // primo livello: lì il tasto a sinistra apre il menu, non torna indietro.
+        var isTopLevel = KIND === "index" || KIND === "changelist" ||
+            (CFG.tabs || []).some(function (tab) {
+                return tab.url === window.location.pathname;
+            });
+        var canGoBack = !isTopLevel;
+        if (canGoBack && (back || window.history.length > 1)) {
+            lead.textContent = "←";
+            lead.setAttribute("aria-label", L.back || "Indietro");
+            lead.addEventListener("click", function () {
+                if (back) { window.location.href = back; }
+                else { window.history.back(); }
+            });
+        } else {
+            lead.textContent = "☰";
+            lead.setAttribute("aria-label", L.menu || "Menu");
+            lead.addEventListener("click", function () { showPanel(S.drawer, S.drawerSearch); });
+            if (!F.drawer) { lead.hidden = true; }
+        }
+        bar.appendChild(lead);
+
+        var title = el("h1", "dam-appbar-title", pageTitle());
+        bar.appendChild(title);
+
+        if (F.drawer) {
+            var search = el("button", "dam-appbar-btn dam-appbar-action", "🔍");
+            search.type = "button";
+            search.setAttribute("aria-label", L.searchMenu || "Cerca");
+            search.addEventListener("click", function () { showPanel(S.drawer, S.drawerSearch); });
+            bar.appendChild(search);
+        }
+
+        document.body.insertBefore(bar, document.body.firstChild);
+        return bar;
+    }
+
+    function buildTabbar() {
+        var tabs = CFG.tabs || [];
+        var nav = el("nav", "dam-tabbar");
+        nav.setAttribute("aria-label", L.menu || "Menu");
+
+        var active = bestMatch(tabs, function (t) { return t.exact ? null : t.match || t.url; });
+        var path = window.location.pathname;
+
+        each(tabs, function (tab) {
+            var link = el("a", "dam-tab");
+            link.href = tab.url;
+            var isActive = tab.exact ? path === tab.url : tab === active;
+            if (tab.exact && path === tab.url) { isActive = true; }
+            if (isActive) { link.classList.add("dam-active"); }
+            link.appendChild(el("span", "dam-tab-icon", tab.icon || "•"));
+            link.appendChild(el("span", "dam-tab-label", tab.label || ""));
+            nav.appendChild(link);
         });
+
+        if (F.drawer) {
+            var menu = el("button", "dam-tab dam-tab-menu");
+            menu.type = "button";
+            menu.appendChild(el("span", "dam-tab-icon", "☰"));
+            menu.appendChild(el("span", "dam-tab-label", L.menu || "Menu"));
+            menu.addEventListener("click", function () { showPanel(S.drawer, S.drawerSearch); });
+            nav.appendChild(menu);
+        }
+
+        if (!nav.children.length) { return null; }
+        document.body.appendChild(nav);
+        return nav;
+    }
+
+    function buildDrawerLink(item) {
+        var row = el("div", "dam-row");
+        var link = el("a", "dam-link");
+        link.href = item.url;
+        link.appendChild(el("span", "dam-link-icon", item.icon || "•"));
+        link.appendChild(el("span", "dam-link-label", item.label));
+        if (CURRENT && CURRENT.url === item.url) { link.classList.add("dam-active"); }
+        if (item.add_url) {
+            var add = el("a", "dam-link-add", "+");
+            add.href = item.add_url;
+            add.title = L.add || "Aggiungi";
+            add.setAttribute("aria-label", (L.add || "Aggiungi") + " — " + item.label);
+            link.appendChild(add);
+        }
+        row.appendChild(link);
+        row.damLabel = (item.label || "").toLowerCase();
+        return row;
+    }
+
+    function buildThemeRow() {
+        var row = el("div", "dam-theme-row");
+        row.appendChild(el("span", "dam-link-icon", "🎨"));
+        row.appendChild(el("span", null, L.theme || "Tema"));
+        var group = el("span", "dam-theme-btns");
+        var modes = [["auto", "◑"], ["light", "☀"], ["dark", "☾"]];
+        var current = "auto";
+        try { current = window.localStorage.getItem("theme") || "auto"; } catch (e) { /* storage negato */ }
+
+        each(modes, function (mode) {
+            var btn = el("button", "dam-theme-btn", mode[1]);
+            btn.type = "button";
+            btn.setAttribute("aria-label", mode[0]);
+            if (mode[0] === current) { btn.classList.add("dam-active"); }
+            btn.addEventListener("click", function () {
+                // Stesse chiavi usate da theme.js di Django: i due sistemi
+                // restano allineati e il tema sopravvive al cambio pagina.
+                document.documentElement.dataset.theme = mode[0];
+                try { window.localStorage.setItem("theme", mode[0]); } catch (e) { /* storage negato */ }
+                each(group.children, function (other) { other.classList.remove("dam-active"); });
+                btn.classList.add("dam-active");
+            });
+            group.appendChild(btn);
+        });
+        row.appendChild(group);
+        return row;
+    }
+
+    function buildLogout() {
+        var existing = document.getElementById("logout-form");
+        if (existing) {
+            var btn = el("button", "dam-link dam-logout");
+            btn.type = "button";
+            btn.appendChild(el("span", "dam-link-icon", "🚪"));
+            btn.appendChild(el("span", "dam-link-label", L.logout || "Esci"));
+            btn.addEventListener("click", function () { existing.submit(); });
+            return btn;
+        }
+        if (!U.logout) { return null; }
+        var form = el("form");
+        form.method = "post";
+        form.action = U.logout;
+        var token = cookie("csrftoken");
+        if (token) {
+            var hidden = el("input");
+            hidden.type = "hidden";
+            hidden.name = "csrfmiddlewaretoken";
+            hidden.value = token;
+            form.appendChild(hidden);
+        }
+        var submit = el("button", "dam-link dam-logout");
+        submit.type = "submit";
+        submit.appendChild(el("span", "dam-link-icon", "🚪"));
+        submit.appendChild(el("span", "dam-link-label", L.logout || "Esci"));
+        form.appendChild(submit);
+        return form;
+    }
+
+    function buildDrawer() {
+        var drawer = el("aside", "dam-drawer");
+        drawer.setAttribute("role", "dialog");
+        drawer.setAttribute("aria-label", L.menu || "Menu");
+
+        var head = el("div", "dam-drawer-head");
+        head.appendChild(el("div", "dam-avatar", (CFG.user && CFG.user.initial) || "?"));
+        var who = el("div", "dam-drawer-user");
+        who.appendChild(el("strong", null, (CFG.user && CFG.user.name) || ""));
+        who.appendChild(el("span", null, CFG.title || ""));
+        head.appendChild(who);
+        var close = el("button", "dam-appbar-btn", "✕");
+        close.type = "button";
+        close.setAttribute("aria-label", L.close || "Chiudi");
+        close.addEventListener("click", closePanel);
+        head.appendChild(close);
+        drawer.appendChild(head);
+
+        var searchWrap = el("div", "dam-drawer-search");
+        var search = el("input");
+        search.type = "search";
+        search.placeholder = L.searchMenu || "Cerca…";
+        search.setAttribute("aria-label", L.searchMenu || "Cerca");
+        searchWrap.appendChild(search);
+        drawer.appendChild(searchWrap);
+        S.drawerSearch = search;
+
+        var body = el("div", "dam-drawer-body");
+        var empty = el("p", "dam-empty", L.noResults || "Nessun risultato.");
+        empty.hidden = true;
+
+        var sections = [];
+        each(CFG.groups, function (group) {
+            var section = el("section", "dam-group");
+            section.appendChild(el("h2", "dam-group-title", group.name));
+            var rows = [];
+            each(group.items, function (item) {
+                var row = buildDrawerLink(item);
+                section.appendChild(row);
+                rows.push(row);
+            });
+            section.damRows = rows;
+            body.appendChild(section);
+            sections.push(section);
+        });
+        body.appendChild(empty);
+        drawer.appendChild(body);
+
+        search.addEventListener("input", function () {
+            var needle = search.value.trim().toLowerCase();
+            var found = 0;
+            each(sections, function (section) {
+                var shown = 0;
+                each(section.damRows, function (row) {
+                    var hit = !needle || row.damLabel.indexOf(needle) !== -1;
+                    row.hidden = !hit;
+                    if (hit) { shown += 1; }
+                });
+                section.hidden = shown === 0;
+                found += shown;
+            });
+            empty.hidden = found !== 0;
+        });
+
+        var foot = el("div", "dam-drawer-foot");
+        if (U.site) {
+            var site = el("a", "dam-link");
+            site.href = U.site;
+            site.appendChild(el("span", "dam-link-icon", "🌐"));
+            site.appendChild(el("span", "dam-link-label", L.site || "Vedi il sito"));
+            foot.appendChild(site);
+        }
+        if (U.password) {
+            var pwd = el("a", "dam-link");
+            pwd.href = U.password;
+            pwd.appendChild(el("span", "dam-link-icon", "🔑"));
+            pwd.appendChild(el("span", "dam-link-label", L.password || "Cambia password"));
+            foot.appendChild(pwd);
+        }
+        foot.appendChild(buildThemeRow());
+        var logout = buildLogout();
+        if (logout) { foot.appendChild(logout); }
+        drawer.appendChild(foot);
+
+        document.body.appendChild(drawer);
+        return drawer;
+    }
+
+    function buildSheet(titleText) {
+        var sheet = el("aside", "dam-sheet");
+        sheet.setAttribute("role", "dialog");
+        sheet.appendChild(el("div", "dam-sheet-grip"));
+
+        var head = el("div", "dam-sheet-head");
+        head.appendChild(el("h2", null, titleText));
+        var close = el("button", "dam-sheet-close", "✕");
+        close.type = "button";
+        close.setAttribute("aria-label", L.close || "Chiudi");
+        close.addEventListener("click", closePanel);
+        head.appendChild(close);
+        sheet.appendChild(head);
+
+        var body = el("div", "dam-sheet-body");
+        sheet.appendChild(body);
+        sheet.damBody = body;
+
+        document.body.appendChild(sheet);
+        return sheet;
+    }
+
+    // ── Elenchi ──────────────────────────────────────────────────────────
+    /** Quanti filtri sono attivi, dedotti dai parametri dell'indirizzo. */
+    function activeFilterCount() {
+        var ignored = { q: 1, p: 1, o: 1, all: 1, _changelist_filters: 1, _to_field: 1, _popup: 1 };
+        var count = 0;
+        each((window.location.search || "").replace(/^\?/, "").split("&"), function (pair) {
+            if (!pair) { return; }
+            var key = decodeURIComponent(pair.split("=")[0]);
+            if (!ignored[key]) { count += 1; }
+        });
+        return count;
+    }
+
+    function decorateRows() {
+        var table = document.getElementById("result_list");
+        if (!table || table.dataset.damRows === "1") { return; }
+
+        var headers = [];
+        each(table.querySelectorAll("thead th"), function (th) {
+            var span = th.querySelector(".text");
+            headers.push(((span || th).textContent || "").replace(/\s+/g, " ").trim());
+        });
+
+        each(table.querySelectorAll("tbody tr"), function (row) {
+            var titleDone = false;
+            each(row.children, function (cell, index) {
+                if (cell.classList.contains("action-checkbox")) { return; }
+                var value = (cell.textContent || "").trim();
+                if (!value) {
+                    cell.classList.add("dam-empty-cell");
+                    return;
+                }
+                if (!titleDone) {
+                    cell.classList.add("dam-card-title");
+                    titleDone = true;
+                    return;   // il titolo non porta l'etichetta della colonna
+                }
+                if (headers[index]) { cell.setAttribute("data-label", headers[index]); }
+            });
+            if (row.querySelector("a[href]")) { row.classList.add("dam-row-link"); }
+        });
+
+        table.addEventListener("click", function (event) {
+            if (!document.body.classList.contains("dam-cards")) { return; }
+            if (closest(event.target, "a, input, select, button, label, textarea")) { return; }
+            var row = closest(event.target, "tr");
+            if (!row || !row.classList.contains("dam-row-link")) { return; }
+            var link = row.querySelector("th a[href], td a[href]");
+            if (link) { window.location.href = link.href; }
+        });
+
+        table.dataset.damRows = "1";
+    }
+
+    var CL = {};   // riferimenti agli elementi dell'elenco
+
+    function changelistOn() {
+        var changelist = document.getElementById("changelist");
+        if (!changelist) { return; }
+
+        // 1. Barra con ricerca e bottone filtri, subito sotto la barra in alto.
+        if (!CL.toolbar) {
+            CL.toolbar = el("div", "dam-toolbar");
+            // Da Django 4.1 il form dell'elenco sta dentro
+            // .changelist-form-container, quindi non è figlio diretto di
+            // #changelist: si inserisce accanto al form, non dentro #changelist.
+            var anchor = document.getElementById("changelist-form");
+            var host = anchor ? anchor.parentNode : changelist;
+            host.insertBefore(CL.toolbar, anchor || host.firstChild);
+        }
+        CL.toolbar.hidden = false;
+
+        var search = document.getElementById("toolbar") || document.getElementById("changelist-search");
+        if (search) { park(search, CL.toolbar); }
+
+        // 2. Filtri e azioni dentro un pannello che sale dal basso.
+        // Le azioni di massa restano dov'erano: il JavaScript di Django le
+        // cerca dentro #changelist-form, spostarle fuori lo romperebbe.
+        // Il foglio accoglie solo i filtri.
+        var filters = document.getElementById("changelist-filter");
+        if (F.filterSheet && filters) {
+            if (!CL.sheet) {
+                CL.sheet = buildSheet(L.filters || "Filtri");
+                S.sheet = CL.sheet;
+            }
+            park(filters, CL.sheet.damBody);
+
+            if (!CL.filterBtn) {
+                CL.filterBtn = el("button", "dam-filter-btn");
+                CL.filterBtn.type = "button";
+                CL.filterBtn.textContent = "⚙ " + (L.filters || "Filtri");
+                CL.filterBtn.addEventListener("click", function () { showPanel(CL.sheet); });
+            }
+            CL.filterBtn.dataset.count = String(activeFilterCount());
+            CL.toolbar.appendChild(CL.filterBtn);
+        }
+
+        // 3. Bottone flottante "aggiungi", preso dagli strumenti dell'oggetto.
+        if (F.fab && !CL.fab) {
+            var add = document.querySelector(".object-tools .addlink");
+            if (add) {
+                CL.fab = el("a", "dam-fab");
+                CL.fab.href = add.href;
+                CL.fab.appendChild(el("span", "dam-fab-plus", "+"));
+                CL.fab.appendChild(el("span", null, L.add || "Aggiungi"));
+                document.body.appendChild(CL.fab);
+            }
+        }
+        if (CL.fab) {
+            CL.fab.hidden = false;
+            document.body.classList.add("dam-has-fab");
+        }
+
+        wireSelection();
+
+        if (F.cards) {
+            decorateRows();
+            document.body.classList.add("dam-cards");
+        }
+    }
+
+    /* Le azioni di massa servono solo dopo aver scelto delle righe: finché
+     * non c'è niente di selezionato restano nascoste, poi salgono dal basso. */
+    function wireSelection() {
+        var form = document.getElementById("changelist-form");
+        if (!form || form.dataset.damSelection === "1") { return; }
+        if (!form.querySelector("input.action-select")) { return; }
+
+        function sync() {
+            var any = !!form.querySelector("input.action-select:checked");
+            document.body.classList.toggle("dam-selection", any);
+        }
+        form.addEventListener("change", function (event) {
+            var target = event.target;
+            if (target && (target.classList.contains("action-select") || target.id === "action-toggle")) {
+                sync();
+            }
+        });
+        form.dataset.damSelection = "1";
+        sync();
+    }
+
+    function changelistOff() {
+        document.body.classList.remove("dam-cards");
+        var search = document.getElementById("toolbar") || document.getElementById("changelist-search");
+        unpark(search);
+        var filters = document.getElementById("changelist-filter");
+        unpark(filters);
+        if (CL.toolbar) { CL.toolbar.hidden = true; }
+        if (CL.fab) { CL.fab.hidden = true; }
+        document.body.classList.remove("dam-has-fab", "dam-selection");
+        closePanel();
+    }
+
+    // ── Schermata iniziale ───────────────────────────────────────────────
+    /* Se il progetto ha una sua dashboard senza griglia di icone, la
+     * costruiamo qui dai dati del menu: così anche un admin personalizzato
+     * ottiene la schermata home in stile app. */
+    function homeOn() {
+        if (document.querySelector(".dam-home")) { return; }
+        var main = document.getElementById("content-main") || document.getElementById("content");
+        if (!main || !CFG.groups || !CFG.groups.length) { return; }
+
+        if (!S.home) {
+            // Una griglia unica: raggruppare per app, con molte app da una
+            // voce sola, allungherebbe la pagina senza aiutare nessuno.
+            // L'elenco diviso per app resta nel menu laterale.
+            var home = el("div", "dam-home");
+            var section = el("section", "dam-home-group");
+            section.appendChild(el("h2", "dam-home-title", L.allSections || "Tutte le sezioni"));
+            var grid = el("div", "dam-mobile-menu");
+            each(ITEMS, function (item) {
+                var tile = el("a", "dam-tile");
+                tile.href = item.url;
+                tile.style.setProperty("--dam-color", item.color);
+                tile.style.setProperty("--dam-bg", item.background);
+                tile.appendChild(el("span", "dam-tile-icon", item.icon || "•"));
+                tile.appendChild(el("span", "dam-tile-label", item.label));
+                grid.appendChild(tile);
+            });
+            section.appendChild(grid);
+            home.appendChild(section);
+            main.appendChild(home);
+            S.home = home;
+        }
+        S.home.hidden = false;
+
+        // L'elenco classico per app diventa un doppione: si nasconde.
+        each(main.querySelectorAll(".module"), function (module) {
+            if (/(^|\s)app-[\w-]+(\s|$)/.test(module.className)) {
+                module.classList.add("dam-hidden-module");
+            }
+        });
+        each(main.querySelectorAll("details"), function (details) {
+            if (!details.querySelector(".module:not(.dam-hidden-module)") &&
+                details.querySelector(".dam-hidden-module")) {
+                details.classList.add("dam-hidden-module");
+            }
+        });
+    }
+
+    function homeOff() {
+        if (S.home) { S.home.hidden = true; }
+        each(document.querySelectorAll(".dam-hidden-module"), function (node) {
+            node.classList.remove("dam-hidden-module");
+        });
+    }
+
+    // ── Attivazione / disattivazione ─────────────────────────────────────
+    var built = false;
+
+    function buildOnce() {
+        if (built) { return; }
+        built = true;
+        if (F.drawer) { S.scrim = buildScrim(); S.drawer = buildDrawer(); }
+        else if (F.filterSheet) { S.scrim = buildScrim(); }
+        if (F.appbar) { S.appbar = buildAppbar(); }
+        if (F.tabbar) { S.tabbar = buildTabbar(); }
+    }
+
+    function enterMobile() {
+        var body = document.body;
+
+        if (KIND === "login") {
+            body.classList.add("dam-mobile", "dam-no-appbar", "dam-no-tabbar");
+            return;
+        }
+
+        buildOnce();
+        body.classList.add("dam-mobile");
+        if (F.hideChrome) { body.classList.add("dam-hide-chrome"); }
+        if (F.forms) { body.classList.add("dam-forms"); }
+        if (!S.appbar) { body.classList.add("dam-no-appbar"); }
+        if (!S.tabbar) { body.classList.add("dam-no-tabbar"); }
+        if (document.querySelector(".submit-row")) { body.classList.add("dam-has-submitrow"); }
+
+        if (KIND === "changelist") { changelistOn(); }
+        if (KIND === "index") { homeOn(); }
+    }
+
+    function leaveMobile() {
+        var body = document.body;
+        body.classList.remove(
+            "dam-mobile", "dam-hide-chrome", "dam-forms",
+            "dam-no-appbar", "dam-no-tabbar", "dam-has-submitrow"
+        );
+        if (KIND === "changelist") { changelistOff(); }
+        if (KIND === "index") { homeOff(); }
+        closePanel();
     }
 
     function apply() {
-        if (!MOBILE.matches) {
-            document.body.classList.remove('dam-cards');
-            return;
-        }
-        decorateChangelist();
-        setupFilterDrawer();
+        if (mq.matches) { enterMobile(); } else { leaveMobile(); }
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', apply);
-    } else {
-        apply();
-    }
-    if (MOBILE.addEventListener) MOBILE.addEventListener('change', apply);
-    else if (MOBILE.addListener) MOBILE.addListener(apply);
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") { closePanel(); }
+    });
+
+    apply();
+    if (mq.addEventListener) { mq.addEventListener("change", apply); }
+    else if (mq.addListener) { mq.addListener(apply); }
 })();

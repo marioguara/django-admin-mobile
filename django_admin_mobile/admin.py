@@ -12,11 +12,12 @@ class MenuIconAdmin(admin.ModelAdmin):
         "model_name",
         "label_override",
         "order",
+        "pinned",
         "visible",
     )
     list_display_links = ("preview", "app_label")
-    list_editable = ("order", "visible")
-    list_filter = ("visible", "app_label")
+    list_editable = ("order", "pinned", "visible")
+    list_filter = ("visible", "pinned", "app_label")
     search_fields = ("app_label", "model_name", "label_override")
     fieldsets = (
         (
@@ -35,8 +36,14 @@ class MenuIconAdmin(admin.ModelAdmin):
             {"fields": ("icon", "color", "background")},
         ),
         (
-            "Ordinamento e visibilità",
-            {"fields": ("order", "visible")},
+            "Posizione nel menu",
+            {
+                "fields": ("order", "pinned", "visible"),
+                "description": (
+                    "«In evidenza» porta la voce anche nella barra di "
+                    "navigazione in basso, come in una normale app."
+                ),
+            },
         ),
     )
 

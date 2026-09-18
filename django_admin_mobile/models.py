@@ -8,6 +8,12 @@ HEX_COLOR_VALIDATOR = RegexValidator(
 )
 
 
+class MenuIconQuerySet(models.QuerySet):
+    def as_map(self):
+        """Restituisce {(app_label, model_name_minuscolo_o_vuoto): MenuIcon}."""
+        return {(mi.app_label, mi.model_name.lower()): mi for mi in self}
+
+
 class MenuIcon(models.Model):
     """Configurazione dell'icona di un'app o di un modello nel menu mobile."""
 
@@ -53,6 +59,16 @@ class MenuIcon(models.Model):
         default=True,
         help_text="Se disattivato, il bottone non compare nel menu mobile.",
     )
+    pinned = models.BooleanField(
+        default=False,
+        verbose_name="In evidenza",
+        help_text=(
+            "Se attivo, la voce compare anche nella barra di navigazione in "
+            "basso, come in una normale app per telefono."
+        ),
+    )
+
+    objects = MenuIconQuerySet.as_manager()
 
     class Meta:
         verbose_name = "Icona menu mobile"

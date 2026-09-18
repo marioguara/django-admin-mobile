@@ -1,89 +1,99 @@
-from django import template
-from django.db import OperationalError, ProgrammingError
+"""Tag da usare nei template dell'admin.
 
-from ..models import MenuIcon
+Nel `base.html` dell'admin (o in un suo override) basta una riga::
+
+    {% load admin_mobile %}
+    {% mobile_admin_assets %}
+
+Da lì il pacchetto si occupa di tutto: CSS, dati del menu e JavaScript che
+costruisce la shell mobile (barra in alto, barra in basso, menu laterale).
+"""
+
+import json
+
+from django import template
+from django.core.serializers.json import DjangoJSONEncoder
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
+
+from ..conf import get_config
+from ..menu import (  # noqa: F401  (riesportati per compatibilità)
+    DEFAULT_APP_ICONS,
+    DEFAULT_BG,
+    DEFAULT_COLOR,
+    build_items,
+    build_menu,
+)
 
 
 register = template.Library()
 
-# Icone di default per app comuni. Sovrascrivibili dal modello MenuIcon.
-DEFAULT_APP_ICONS = {
-    "auth": "🔐",
-    "authtoken": "🔑",
-    "sites": "🌍",
-    "admin": "⚙️",
-    "contenttypes": "🧩",
-    "sessions": "💾",
-    "pazienti": "🧑‍⚕️",
-    "visite": "📅",
-    "calendario": "🗓️",
-    "blog": "✍️",
-    "chatbot": "🤖",
-    "whatsapp_bot": "💬",
-    "posta": "✉️",
-    "social": "📣",
-    "consent": "📜",
-    "impostazioni": "🛠️",
-    "frontend": "🌐",
-}
-
-DEFAULT_COLOR = "#417690"
-DEFAULT_BG = "#ffffff"
+#: id dell'elemento <script> che porta il menu al browser.
+CONFIG_ELEMENT_ID = "dam-config"
 
 
-def _load_icons():
-    """Restituisce {(app_label, model_name_or_empty): MenuIcon}."""
-    try:
-        qs = MenuIcon.objects.filter(visible=True)
-        return {(mi.app_label, mi.model_name.lower()): mi for mi in qs}
-    except (OperationalError, ProgrammingError):
-        # Tabella non ancora migrata: degrada silenziosamente ai default.
-        return {}
+def _config_script(context):
+    """Serializza il menu in un `<script type="application/json">`.
 
-
-def _resolve_icon(icons, app_label, model_name):
-    return (
-        icons.get((app_label, model_name.lower()))
-        or icons.get((app_label, ""))
+    Dopo `json.dumps` si neutralizzano i caratteri che potrebbero chiudere il
+    tag `<script>` in anticipo: è la stessa difesa del filtro `json_script` di
+    Django, riscritta qui per non dipendere dalla versione.
+    """
+    payload = json.dumps(build_menu(context), ensure_ascii=False, cls=DjangoJSONEncoder)
+    payload = (
+        payload.replace("<", "\\u003C")
+        .replace(">", "\\u003E")
+        .replace("&", "\\u0026")
     )
+    return format_html(
+        '<script id="{}" type="application/json">{}</script>',
+        CONFIG_ELEMENT_ID,
+        mark_safe(payload),  # i caratteri pericolosi sono già stati sostituiti
+    )
+
+
+@register.simple_tag(takes_context=True)
+def mobile_admin_config(context):
+    """Solo i dati del menu, per chi vuole posizionarli a mano."""
+    return _config_script(context)
+
+
+@register.inclusion_tag("django_admin_mobile/_mobile_assets.html", takes_context=True)
+def mobile_admin_assets(context):
+    """CSS, dati del menu e JavaScript della shell mobile."""
+    return {
+        "dam_config": _config_script(context),
+        "accent": get_config().get("ACCENT"),
+    }
 
 
 @register.inclusion_tag("django_admin_mobile/_mobile_menu.html", takes_context=True)
 def render_mobile_menu(context, app_list=None):
-    """Rende una griglia di bottoni con icone per il menu admin mobile.
+    """Griglia di icone in stile schermata home di un telefono.
 
-    Se `app_list` non è passato, viene letto dal context (chiavi
-    `app_list` o `available_apps`, come forniti dall'admin di Django).
+    Se `app_list` non viene passato si legge dal context (`app_list` oppure
+    `available_apps`, come li fornisce l'admin di Django).
     """
-
     if app_list is None:
         app_list = context.get("app_list") or context.get("available_apps") or []
 
-    icons = _load_icons()
-    tiles = []
-    for app in app_list:
-        app_label = app.get("app_label") or ""
-        for model in app.get("models", []) or []:
-            model_key = (model.get("object_name") or "").lower()
-            cfg = _resolve_icon(icons, app_label, model_key)
-            url = model.get("admin_url") or model.get("add_url") or "#"
-            tiles.append(
-                {
-                    "label": (cfg.label_override if cfg and cfg.label_override else model.get("name", model_key)),
-                    "url": url,
-                    "icon": (cfg.icon if cfg else DEFAULT_APP_ICONS.get(app_label, "📄")),
-                    "color": (cfg.color if cfg else DEFAULT_COLOR),
-                    "background": (cfg.background if cfg else DEFAULT_BG),
-                    "order": (cfg.order if cfg else 0),
-                    "app_label": app_label,
-                }
-            )
-
-    tiles.sort(key=lambda t: (t["order"], t["app_label"], t["label"]))
-    return {"tiles": tiles}
+    config = get_config()
+    items = build_items(app_list, config=config)
+    return {
+        "tiles": items,
+        "groups": _group(items),
+        "accent": config.get("ACCENT"),
+    }
 
 
-@register.inclusion_tag("django_admin_mobile/_mobile_assets.html")
-def mobile_admin_assets():
-    """Inietta i link agli asset (CSS/JS) del pacchetto."""
-    return {}
+def _group(items):
+    """Raggruppa le voci per app mantenendo l'ordine ricevuto."""
+    groups = []
+    index = {}
+    for item in items:
+        key = item["app_label"]
+        if key not in index:
+            index[key] = {"app_label": key, "name": item["app_name"], "items": []}
+            groups.append(index[key])
+        index[key]["items"].append(item)
+    return groups

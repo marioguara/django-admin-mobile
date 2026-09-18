@@ -14,11 +14,13 @@
 {% block content %}
 <div id="content-main">
 
-    {# Griglia mobile: bottoni con icone configurabili. #}
+    {# Schermata home in stile app: icone raggruppate per applicazione. #}
     {% render_mobile_menu app_list %}
 
-    {# Elenco classico dell'admin di Django (visibile da desktop). #}
-    {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
+    {# Elenco classico dell'admin: su telefono viene nascosto dal CSS. #}
+    <div class="dam-classic-list">
+        {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
+    </div>
 </div>
 {% endblock %}
 

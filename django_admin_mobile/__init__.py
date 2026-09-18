@@ -1,3 +1,3 @@
-"""django-admin-mobile — griglia mobile con icone configurabili per l'admin di Django."""
+"""django-admin-mobile — l'admin di Django come una normale app per telefono."""
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

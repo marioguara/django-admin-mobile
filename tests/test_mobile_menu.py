@@ -1,3 +1,5 @@
+"""Griglia di icone, configurazione delle icone e tag dei template."""
+
 import pytest
 from django.core.exceptions import ValidationError
 from django.template import Context, Template
@@ -14,6 +16,7 @@ APP_LIST_FIXTURE = [
                 "name": "Pazienti",
                 "object_name": "Paziente",
                 "admin_url": "/admin/pazienti/paziente/",
+                "add_url": "/admin/pazienti/paziente/add/",
             },
         ],
     },
@@ -48,6 +51,14 @@ def test_menu_icon_hex_validation():
         icon.full_clean()
 
 
+@pytest.mark.django_db
+def test_menu_icon_as_map():
+    MenuIcon.objects.create(app_label="blog", model_name="Post", icon="✍️")
+    mapping = MenuIcon.objects.all().as_map()
+    # La chiave del modello è sempre in minuscolo.
+    assert ("blog", "post") in mapping
+
+
 def _render(app_list):
     tpl = Template("{% load admin_mobile %}{% render_mobile_menu app_list %}")
     return tpl.render(Context({"app_list": app_list}))
@@ -56,10 +67,8 @@ def _render(app_list):
 @pytest.mark.django_db
 def test_render_mobile_menu_uses_defaults_when_no_config():
     html = _render(APP_LIST_FIXTURE)
-    # Icona di default per pazienti presa dalla mappa DEFAULT_APP_ICONS.
-    assert "🧑‍⚕️" in html or "🧑‍⚕️" in html
-    # Icona di default generica per una app non nota.
-    assert "📄" in html
+    assert "🧑‍⚕️" in html            # icona di default per l'app "pazienti"
+    assert "📄" in html              # ripiego per un'app sconosciuta
     assert "/admin/pazienti/paziente/" in html
 
 
@@ -101,13 +110,25 @@ def test_render_mobile_menu_respects_visible_flag():
     assert "🚫" not in html
 
 
+@pytest.mark.django_db
+def test_render_mobile_menu_groups_by_app():
+    html = _render(APP_LIST_FIXTURE)
+    assert "dam-home-group" in html
+    assert "Pazienti" in html
+    assert "Custom" in html
+
+
+@pytest.mark.django_db
 def test_render_mobile_menu_empty_app_list_renders_nothing():
     html = _render([])
     assert "dam-mobile-menu" not in html
 
 
-def test_mobile_admin_assets_outputs_link_and_script():
+@pytest.mark.django_db
+def test_mobile_admin_assets_outputs_css_js_and_config():
     tpl = Template("{% load admin_mobile %}{% mobile_admin_assets %}")
     html = tpl.render(Context({}))
     assert "admin_mobile.css" in html
     assert "admin_mobile.js" in html
+    assert 'id="dam-config"' in html
+    assert 'type="application/json"' in html

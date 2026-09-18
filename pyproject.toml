@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-admin-mobile"
-version = "0.1.0"
-description = "Griglia mobile con icone configurabili e CSS responsive per il pannello admin di Django."
+version = "0.2.0"
+description = "L'admin di Django come una normale app per telefono: barra in alto, barra di navigazione in basso, menu laterale, elenchi a schede."
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.9"
@@ -45,10 +45,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/your-org/django-admin-mobile"
-Repository = "https://github.com/your-org/django-admin-mobile"
-Issues = "https://github.com/your-org/django-admin-mobile/issues"
-Changelog = "https://github.com/your-org/django-admin-mobile/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/marioguara/django-admin-mobile"
+Repository = "https://github.com/marioguara/django-admin-mobile"
+Issues = "https://github.com/marioguara/django-admin-mobile/issues"
+Changelog = "https://github.com/marioguara/django-admin-mobile/blob/main/CHANGELOG.md"
 
 [tool.setuptools]
 include-package-data = true

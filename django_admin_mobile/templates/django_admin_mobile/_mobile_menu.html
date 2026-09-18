@@ -1,13 +1,24 @@
-{% if tiles %}
-<section class="dam-mobile-menu" aria-label="Menu mobile">
-    {% for tile in tiles %}
-    <a class="dam-tile"
-       href="{{ tile.url }}"
-       style="--dam-color: {{ tile.color }}; --dam-bg: {{ tile.background }};"
-       aria-label="{{ tile.label }}">
-        <span class="dam-tile-icon" aria-hidden="true">{{ tile.icon }}</span>
-        <span class="dam-tile-label">{{ tile.label }}</span>
-    </a>
+{% comment %}
+Schermata "home" in stile app: le sezioni dell'admin come icone, raggruppate
+per applicazione. Su desktop resta una griglia larga, su telefono diventa a
+tre colonne come la home di un telefono.
+{% endcomment %}
+{% if groups %}
+<div class="dam-home">
+    {% for group in groups %}
+    <section class="dam-home-group" aria-label="{{ group.name }}">
+        <h2 class="dam-home-title">{{ group.name }}</h2>
+        <div class="dam-mobile-menu">
+            {% for tile in group.items %}
+            <a class="dam-tile"
+               href="{{ tile.url }}"
+               style="--dam-color: {{ tile.color }}; --dam-bg: {{ tile.background }};">
+                <span class="dam-tile-icon" aria-hidden="true">{{ tile.icon }}</span>
+                <span class="dam-tile-label">{{ tile.label }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
     {% endfor %}
-</section>
+</div>
 {% endif %}

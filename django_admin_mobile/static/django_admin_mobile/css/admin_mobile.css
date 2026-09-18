@@ -1,18 +1,83 @@
 /* =========================================================================
-   django_admin_mobile
-   Foglio di stile del pacchetto: griglia menu mobile + adattamenti generici
-   per changelist / change form.
+   django-admin-mobile
+   L'admin di Django con l'aspetto e i gesti di una normale app per telefono:
+   barra in alto, barra di navigazione in basso, menu laterale, pannelli che
+   salgono dal basso, elenchi a schede.
+
+   Tutto ciò che riguarda il telefono è sotto `body.dam-mobile`: quella classe
+   la mette (e la toglie) il JavaScript in base al BREAKPOINT configurato, così
+   la soglia resta un'impostazione del progetto e non un numero scritto qui.
+   Sul desktop l'admin resta esattamente quello di Django.
    ========================================================================= */
 
+:root {
+    --dam-accent: #417690;
+    --dam-on-accent: #ffffff;
+    --dam-appbar-h: 56px;
+    --dam-tabbar-h: 60px;
+    --dam-radius: 16px;
+    --dam-radius-sm: 10px;
+    --dam-surface: #ffffff;
+    --dam-surface-2: #f2f4f7;
+    --dam-text: #1f2328;
+    --dam-muted: #667079;
+    --dam-border: #e2e6ea;
+    --dam-shadow: 0 1px 2px rgba(16, 24, 32, .06), 0 10px 30px rgba(16, 24, 32, .08);
+    --dam-safe-top: env(safe-area-inset-top, 0px);
+    --dam-safe-bottom: env(safe-area-inset-bottom, 0px);
+    --dam-z-scrim: 1300;
+    --dam-z-panel: 1400;
+    --dam-z-appbar: 1200;
+    --dam-z-tabbar: 1200;
+}
+
+html[data-theme="dark"] {
+    --dam-surface: #1b1f24;
+    --dam-surface-2: #232931;
+    --dam-text: #e9edf1;
+    --dam-muted: #9aa5b1;
+    --dam-border: #333b44;
+    --dam-shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px rgba(0, 0, 0, .45);
+}
+
+@media (prefers-color-scheme: dark) {
+    html:not([data-theme="light"]) {
+        --dam-surface: #1b1f24;
+        --dam-surface-2: #232931;
+        --dam-text: #e9edf1;
+        --dam-muted: #9aa5b1;
+        --dam-border: #333b44;
+        --dam-shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px rgba(0, 0, 0, .45);
+    }
+}
+
 /* --------------------------------------------------------------------------
-   1. Griglia mobile (dashboard / index)
+   1. Schermata home: le sezioni come icone di un telefono
+   Funziona anche da desktop, dove resta una griglia larga.
    -------------------------------------------------------------------------- */
+.dam-home { margin: 0 0 24px; }
+
+.dam-home-group + .dam-home-group { margin-top: 18px; }
+
+.dam-home-title {
+    margin: 0 0 8px;
+    padding: 0 2px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    color: var(--dam-muted);
+    background: none;
+    border: 0;
+}
+
 .dam-mobile-menu {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 12px;
-    margin: 12px 0 24px;
-    padding: 0 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 
 .dam-tile {
@@ -24,228 +89,1192 @@
     justify-content: center;
     text-align: center;
     gap: 8px;
-    padding: 16px 10px;
+    padding: 16px 8px;
+    min-width: 0;
     min-height: 104px;
-    border-radius: 14px;
-    border: 2px solid var(--dam-color);
-    background: var(--dam-bg);
-    color: var(--dam-color);
+    border-radius: var(--dam-radius);
+    border: 1px solid var(--dam-border);
+    background: var(--dam-surface);
+    color: var(--dam-text);
     text-decoration: none !important;
     font-weight: 600;
     line-height: 1.15;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-    transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+    box-shadow: 0 1px 2px rgba(16, 24, 32, .05);
+    transition: transform .12s ease, box-shadow .12s ease;
     -webkit-tap-highlight-color: transparent;
 }
 
 .dam-tile:hover,
 .dam-tile:focus-visible {
     transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
-    background: var(--dam-color);
-    color: #fff;
+    box-shadow: var(--dam-shadow);
+    color: var(--dam-text);
     outline: none;
 }
 
-.dam-tile:active {
-    transform: translateY(0);
-}
+.dam-tile:active { transform: scale(.97); }
 
 .dam-tile-icon {
-    font-size: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 15px;
+    font-size: 26px;
     line-height: 1;
+    background: var(--dam-bg);
+    color: var(--dam-color);
+    border: 1px solid color-mix(in srgb, var(--dam-color) 25%, transparent);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .35);
 }
 
 .dam-tile-label {
     font-size: 13px;
-    letter-spacing: .2px;
+    letter-spacing: .1px;
+    overflow-wrap: anywhere;
+}
+
+/* --------------------------------------------------------------------------
+   2. Impalcatura della shell (solo telefono)
+   -------------------------------------------------------------------------- */
+.dam-appbar,
+.dam-tabbar,
+.dam-drawer,
+.dam-scrim,
+.dam-sheet,
+.dam-fab,
+.dam-toolbar { display: none; }
+
+body.dam-mobile {
+    padding-top: calc(var(--dam-appbar-h) + var(--dam-safe-top));
+    padding-bottom: calc(var(--dam-tabbar-h) + var(--dam-safe-bottom));
+    background: var(--dam-surface-2);
+}
+
+body.dam-mobile.dam-no-tabbar { padding-bottom: var(--dam-safe-bottom); }
+body.dam-mobile.dam-no-appbar { padding-top: var(--dam-safe-top); }
+
+/* Con un pannello aperto la pagina sotto non deve scorrere. */
+body.dam-locked { overflow: hidden !important; }
+
+/* Cromature native di Django che la shell sostituisce. */
+body.dam-mobile.dam-hide-chrome #header,
+body.dam-mobile.dam-hide-chrome #nav-breadcrumbs,
+body.dam-mobile.dam-hide-chrome .breadcrumbs,
+body.dam-mobile.dam-hide-chrome #nav-sidebar,
+body.dam-mobile.dam-hide-chrome .toggle-nav-sidebar,
+body.dam-mobile.dam-hide-chrome #content-related,
+body.dam-mobile.dam-hide-chrome #footer,
+body.dam-mobile .dam-classic-list,
+body.dam-mobile #content > h1,
+body.dam-mobile .skip-to-content-link { display: none !important; }
+
+body.dam-mobile #container { padding: 0; }
+
+body.dam-mobile .main {
+    display: block;
+    padding: 0;
+}
+
+body.dam-mobile #content,
+body.dam-mobile .colM #content,
+body.dam-mobile .colMS #content {
+    width: auto;
+    max-width: 100%;
+    float: none;
+    margin: 0;
+    padding: 12px 12px 8px;
+    box-sizing: border-box;
+    overflow-x: clip;
+}
+
+body.dam-mobile #content-main,
+body.dam-mobile .colMS #content-main {
+    width: 100%;
+    float: none;
+    min-width: 0;
+}
+
+body.dam-mobile .messagelist { margin: 0 0 10px; padding: 0; }
+body.dam-mobile .messagelist li {
+    border-radius: var(--dam-radius-sm);
+    margin: 0 0 6px;
+    font-size: 14px;
+}
+
+/* La home a icone passa a 3 colonne strette, come la schermata di un telefono. */
+body.dam-mobile .dam-mobile-menu {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+body.dam-mobile .dam-tile {
+    min-height: 92px;
+    padding: 12px 4px;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+body.dam-mobile .dam-tile-icon { width: 54px; height: 54px; font-size: 26px; }
+body.dam-mobile .dam-tile-label { font-size: 11px; font-weight: 600; }
+
+@media (max-width: 340px) {
+    body.dam-mobile .dam-mobile-menu { gap: 6px; }
+    body.dam-mobile .dam-tile-icon { width: 48px; height: 48px; font-size: 23px; }
+    body.dam-mobile .dam-tile-label { font-size: 10px; }
+}
+
+/* --------------------------------------------------------------------------
+   3. Barra in alto
+   -------------------------------------------------------------------------- */
+body.dam-mobile .dam-appbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: calc(var(--dam-appbar-h) + var(--dam-safe-top));
+    padding: var(--dam-safe-top) 4px 0;
+    box-sizing: border-box;
+    background: var(--dam-accent);
+    color: var(--dam-on-accent);
+    z-index: var(--dam-z-appbar);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .18);
+}
+
+.dam-appbar-btn {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    height: 44px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: inherit;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.dam-appbar-btn:hover,
+.dam-appbar-btn:focus-visible { background: rgba(255, 255, 255, .16); color: inherit; outline: none; }
+.dam-appbar-btn:active { background: rgba(255, 255, 255, .26); }
+
+.dam-appbar-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    padding: 0 4px;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: .1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: inherit;
+}
+
+/* --------------------------------------------------------------------------
+   4. Barra di navigazione in basso
+   -------------------------------------------------------------------------- */
+body.dam-mobile .dam-tabbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: stretch;
+    height: calc(var(--dam-tabbar-h) + var(--dam-safe-bottom));
+    padding-bottom: var(--dam-safe-bottom);
+    box-sizing: border-box;
+    background: var(--dam-surface);
+    border-top: 1px solid var(--dam-border);
+    z-index: var(--dam-z-tabbar);
+}
+
+.dam-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 6px 2px;
+    border: 0;
+    background: transparent;
+    color: var(--dam-muted);
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.1;
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.dam-tab-icon {
+    font-size: 21px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    width: 46px;
+    border-radius: 14px;
+    transition: background .15s ease;
+}
+
+.dam-tab-label {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dam-tab.dam-active { color: var(--dam-accent); }
+.dam-tab.dam-active .dam-tab-icon { background: color-mix(in srgb, var(--dam-accent) 14%, transparent); }
+.dam-tab:active .dam-tab-icon { transform: scale(.92); }
+
+/* --------------------------------------------------------------------------
+   5. Menu laterale e velo
+   -------------------------------------------------------------------------- */
+body.dam-mobile .dam-scrim {
+    position: fixed;
+    inset: 0;
+    display: block;
+    background: rgba(15, 20, 25, .45);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .2s ease, visibility .2s ease;
+    z-index: var(--dam-z-scrim);
+}
+body.dam-mobile .dam-scrim.dam-open { opacity: 1; visibility: visible; }
+
+body.dam-mobile .dam-drawer {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    width: min(86vw, 330px);
+    background: var(--dam-surface);
+    color: var(--dam-text);
+    transform: translateX(-102%);
+    transition: transform .22s cubic-bezier(.2, .7, .3, 1);
+    z-index: var(--dam-z-panel);
+    box-shadow: var(--dam-shadow);
+}
+body.dam-mobile .dam-drawer.dam-open { transform: translateX(0); }
+
+.dam-drawer-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: calc(var(--dam-safe-top) + 14px) 14px 14px;
+    background: var(--dam-accent);
+    color: var(--dam-on-accent);
+}
+
+.dam-avatar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .22);
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.dam-drawer-user { flex: 1 1 auto; min-width: 0; }
+.dam-drawer-user strong {
+    display: block;
+    font-size: 15px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.dam-drawer-user span { display: block; font-size: 12px; opacity: .85; }
+
+.dam-drawer-search { padding: 10px 12px; border-bottom: 1px solid var(--dam-border); }
+.dam-drawer-search input {
+    width: 100%;
+    min-height: 42px;
+    padding: 8px 12px;
+    box-sizing: border-box;
+    border: 1px solid var(--dam-border);
+    border-radius: 999px;
+    background: var(--dam-surface-2);
+    color: var(--dam-text);
+    font-size: 16px;   /* 16px: impedisce lo zoom automatico su iOS */
+}
+.dam-drawer-search input:focus { outline: 2px solid var(--dam-accent); outline-offset: -1px; }
+
+.dam-drawer-body { flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 6px 0 10px; }
+
+.dam-group-title {
+    margin: 12px 0 2px;
+    padding: 0 14px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    color: var(--dam-muted);
+}
+
+.dam-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 14px;
+    color: var(--dam-text);
+    text-decoration: none;
+    font-size: 15px;
+    -webkit-tap-highlight-color: transparent;
+}
+.dam-link:hover, .dam-link:focus-visible { background: var(--dam-surface-2); color: var(--dam-text); outline: none; }
+.dam-link.dam-active { background: color-mix(in srgb, var(--dam-accent) 12%, transparent); color: var(--dam-accent); font-weight: 600; }
+.dam-link-icon { flex: 0 0 auto; width: 26px; text-align: center; font-size: 19px; }
+.dam-link-label { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dam-link-add {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--dam-surface-2);
+    color: var(--dam-accent);
+    font-size: 19px;
+    font-weight: 700;
+    text-decoration: none;
+    line-height: 1;
+}
+.dam-link-add:hover { background: var(--dam-accent); color: var(--dam-on-accent); }
+
+.dam-drawer-foot {
+    flex: 0 0 auto;
+    border-top: 1px solid var(--dam-border);
+    padding: 6px 0 calc(var(--dam-safe-bottom) + 6px);
+}
+.dam-drawer-foot .dam-link { font-size: 14px; padding: 10px 14px; }
+.dam-drawer-foot form { margin: 0; }
+.dam-drawer-foot button.dam-link {
+    width: 100%;
+    border: 0;
+    background: none;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.dam-logout { color: #c0392b; }
+
+.dam-theme-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    font-size: 14px;
+    color: var(--dam-text);
+}
+.dam-theme-row .dam-theme-btns { margin-left: auto; display: flex; gap: 4px; }
+.dam-theme-btn {
+    min-width: 38px;
+    height: 32px;
+    border: 1px solid var(--dam-border);
+    border-radius: 8px;
+    background: var(--dam-surface);
+    color: var(--dam-text);
+    font-size: 15px;
+    cursor: pointer;
+}
+.dam-theme-btn.dam-active { background: var(--dam-accent); color: var(--dam-on-accent); border-color: var(--dam-accent); }
+
+.dam-empty { padding: 18px 14px; color: var(--dam-muted); font-size: 14px; font-style: italic; }
+
+/* --------------------------------------------------------------------------
+   6. Pannello che sale dal basso (filtri, azioni)
+   -------------------------------------------------------------------------- */
+body.dam-mobile .dam-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    max-height: 82vh;
+    background: var(--dam-surface);
+    color: var(--dam-text);
+    border-radius: 18px 18px 0 0;
+    transform: translateY(102%);
+    transition: transform .24s cubic-bezier(.2, .7, .3, 1);
+    z-index: var(--dam-z-panel);
+    box-shadow: var(--dam-shadow);
+}
+body.dam-mobile .dam-sheet.dam-open { transform: translateY(0); }
+
+.dam-sheet-grip {
+    flex: 0 0 auto;
+    width: 40px;
+    height: 4px;
+    margin: 8px auto 2px;
+    border-radius: 2px;
+    background: var(--dam-border);
+}
+
+.dam-sheet-head {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px 10px;
+    border-bottom: 1px solid var(--dam-border);
+}
+.dam-sheet-head h2 {
+    flex: 1 1 auto;
+    margin: 0;
+    padding: 0;
+    font-size: 16px;
+    font-weight: 700;
+    background: none;
+    color: var(--dam-text);
+    border: 0;
+    text-transform: none;
+    letter-spacing: 0;
+}
+.dam-sheet-close {
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--dam-surface-2);
+    color: var(--dam-text);
+    font-size: 19px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.dam-sheet-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 6px 14px calc(var(--dam-safe-bottom) + 16px);
+}
+
+/* Il pannello filtri di Django, ricollocato dentro il foglio. */
+.dam-sheet-body #changelist-filter {
+    position: static;
+    float: none;
+    width: auto;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
+}
+.dam-sheet-body #changelist-filter > h2 {
+    margin: 10px 0 4px;
+    padding: 0;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    color: var(--dam-muted);
+    background: none;
+    border: 0;
+}
+.dam-sheet-body #changelist-filter h3 {
+    margin: 14px 0 6px;
+    padding: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--dam-text);
+}
+.dam-sheet-body #changelist-filter ul {
+    margin: 0 0 10px;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    border: 0;
+}
+.dam-sheet-body #changelist-filter li { margin: 0; padding: 0; border: 0; }
+.dam-sheet-body #changelist-filter li a {
+    display: inline-block;
+    padding: 8px 14px;
+    border: 1px solid var(--dam-border);
+    border-radius: 999px;
+    background: var(--dam-surface-2);
+    color: var(--dam-text);
+    font-size: 13px;
+    text-decoration: none;
+    line-height: 1.2;
+}
+.dam-sheet-body #changelist-filter li.selected a,
+.dam-sheet-body #changelist-filter li a.selected {
+    background: var(--dam-accent);
+    border-color: var(--dam-accent);
+    color: var(--dam-on-accent);
+    font-weight: 600;
+}
+/* I filtri che mostrano un modulo (per data, a tendina) restano incolonnati. */
+.dam-sheet-body #changelist-filter form,
+.dam-sheet-body #changelist-filter select,
+.dam-sheet-body #changelist-filter input {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+.dam-sheet-body #changelist-filter select { min-height: 42px; font-size: 16px; width: 100%; }
+
+.dam-sheet-hint { margin: 0 0 10px; font-size: 13px; color: var(--dam-muted); }
+
+/* --------------------------------------------------------------------------
+   7. Elenchi
+   -------------------------------------------------------------------------- */
+body.dam-mobile .dam-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 10px;
+}
+body.dam-mobile .dam-toolbar #toolbar,
+body.dam-mobile .dam-toolbar #changelist-search {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+}
+body.dam-mobile .dam-toolbar #changelist-search > div,
+body.dam-mobile .dam-toolbar #changelist-search > form > div {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    margin: 0;
+}
+body.dam-mobile .dam-toolbar #searchbar {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: auto;
+    min-height: 42px;
+    padding: 8px 14px;
+    box-sizing: border-box;
+    border: 1px solid var(--dam-border);
+    border-radius: 999px;
+    background: var(--dam-surface);
+    color: var(--dam-text);
+    font-size: 16px;
+}
+body.dam-mobile .dam-toolbar #changelist-search input[type="submit"] {
+    flex: 0 0 auto;
+    min-height: 42px;
+    padding: 0 14px;
+    border-radius: 999px;
+}
+/* Il conteggio dei risultati e il link "azzera" non devono spingere fuori
+   schermo il bottone di ricerca: vanno a capo e restano piccoli. */
+body.dam-mobile .dam-toolbar #changelist-search .small,
+body.dam-mobile .dam-toolbar #changelist-search .quiet,
+body.dam-mobile .dam-toolbar #changelist-search span.small.quiet {
+    flex: 0 1 auto;
+    min-width: 0;
+    font-size: 11px;
+}
+body.dam-mobile .dam-toolbar .dam-filter-btn {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 42px;
+    padding: 0 14px;
+    border: 1px solid var(--dam-border);
+    border-radius: 999px;
+    background: var(--dam-surface);
+    color: var(--dam-text);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+body.dam-mobile .dam-toolbar .dam-filter-btn[data-count]:not([data-count="0"])::after {
+    content: attr(data-count);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 9px;
+    background: var(--dam-accent);
+    color: var(--dam-on-accent);
+    font-size: 11px;
+}
+
+body.dam-mobile #changelist { display: block; }
+body.dam-mobile #changelist .results { overflow-x: auto; margin: 0; border: 0; }
+body.dam-mobile #changelist-filter { display: none; }   /* spostato nel foglio */
+body.dam-mobile.dam-has-fab .object-tools { display: none; }  /* sostituito dal bottone flottante */
+/* Azioni di massa: restano nel form (Django le cerca lì), ma diventano una
+   riga compatta che va a capo invece di sfondare lo schermo. */
+body.dam-mobile #changelist-form .actions { display: none; }
+body.dam-mobile.dam-selection #changelist-form .actions {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--dam-tabbar-h) + var(--dam-safe-bottom));
+    z-index: 1100;
+    border: 0;
+    border-top: 1px solid var(--dam-border);
+    border-radius: 0;
+    box-shadow: 0 -2px 12px rgba(16, 24, 32, .14);
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 10px 12px;
+    box-sizing: border-box;
+    background: var(--dam-surface);
+}
+body.dam-mobile.dam-no-tabbar.dam-selection #changelist-form .actions { bottom: var(--dam-safe-bottom); }
+/* Con una selezione in corso il bottone flottante lascia il posto alle azioni. */
+body.dam-mobile.dam-selection .dam-fab { display: none; }
+body.dam-mobile #changelist-form .actions label {
+    flex: 1 1 100%;
+    min-width: 0;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    color: var(--dam-muted);
+}
+body.dam-mobile #changelist-form .actions select {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 44px;
+    font-size: 16px;
+}
+body.dam-mobile #changelist-form .actions button,
+body.dam-mobile #changelist-form .actions .button {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: var(--dam-radius-sm);
+}
+body.dam-mobile #changelist-form .actions .action-counter,
+body.dam-mobile #changelist-form .actions .all,
+body.dam-mobile #changelist-form .actions .question,
+body.dam-mobile #changelist-form .actions .clear {
+    flex: 1 1 100%;
+    min-width: 0;
+    font-size: 12px;
+    white-space: normal;
+    color: var(--dam-muted);
+}
+
+/* Tabella dei risultati come elenco di schede. */
+body.dam-mobile.dam-cards #result_list,
+body.dam-mobile.dam-cards #result_list tbody,
+body.dam-mobile.dam-cards #result_list tr,
+body.dam-mobile.dam-cards #result_list td,
+body.dam-mobile.dam-cards #result_list th {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+body.dam-mobile.dam-cards #result_list { border: 0; background: none; }
+body.dam-mobile.dam-cards #result_list thead { display: none; }
+body.dam-mobile.dam-cards #result_list colgroup { display: none; }
+
+body.dam-mobile.dam-cards #result_list tbody tr {
+    position: relative;
+    margin: 0 0 10px;
+    padding: 12px 40px 12px 14px;
+    border: 1px solid var(--dam-border);
+    border-radius: var(--dam-radius);
+    background: var(--dam-surface);
+    box-shadow: 0 1px 2px rgba(16, 24, 32, .05);
+}
+body.dam-mobile.dam-cards #result_list tbody tr.selected {
+    border-color: var(--dam-accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--dam-accent) 30%, transparent);
+}
+body.dam-mobile.dam-cards #result_list tbody tr.dam-row-link { cursor: pointer; }
+body.dam-mobile.dam-cards #result_list tbody tr.dam-row-link::after {
+    content: "›";
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    transform: translateY(-50%);
+    color: var(--dam-muted);
+    font-size: 22px;
+    line-height: 1;
+}
+
+body.dam-mobile.dam-cards #result_list tbody td,
+body.dam-mobile.dam-cards #result_list tbody th {
+    padding: 3px 0;
+    border: 0;
+    font-size: 14px;
+    color: var(--dam-text);
+    overflow-wrap: anywhere;
+}
+/* La prima colonna fa da titolo della scheda. */
+body.dam-mobile.dam-cards #result_list tbody th.field-__str__,
+body.dam-mobile.dam-cards #result_list tbody .dam-card-title {
+    font-size: 16px;
+    font-weight: 700;
+    padding-bottom: 6px;
+}
+body.dam-mobile.dam-cards #result_list tbody .dam-card-title a { color: var(--dam-text); text-decoration: none; }
+
+body.dam-mobile.dam-cards #result_list tbody td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    color: var(--dam-muted);
+    margin-bottom: 1px;
+}
+body.dam-mobile.dam-cards #result_list tbody td.dam-empty-cell { display: none; }
+
+body.dam-mobile.dam-cards #result_list tbody td.action-checkbox {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: auto;
+    padding: 0;
+}
+body.dam-mobile.dam-cards #result_list tbody td.action-checkbox input { width: 22px; height: 22px; }
+
+body.dam-mobile .paginator {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 0 4px;
+    border: 0;
+    font-size: 13px;
+    color: var(--dam-muted);
+    background: none;
+}
+body.dam-mobile .paginator a,
+body.dam-mobile .paginator .this-page {
+    min-width: 40px;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 10px;
+    border-radius: var(--dam-radius-sm);
+    background: var(--dam-surface);
+    border: 1px solid var(--dam-border);
+    text-decoration: none;
+}
+body.dam-mobile .paginator .this-page { background: var(--dam-accent); border-color: var(--dam-accent); color: var(--dam-on-accent); font-weight: 700; }
+
+/* Bottone flottante "aggiungi". */
+body.dam-mobile .dam-fab {
+    position: fixed;
+    right: 16px;
+    bottom: calc(var(--dam-tabbar-h) + var(--dam-safe-bottom) + 16px);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 54px;
+    min-width: 54px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 27px;
+    background: var(--dam-accent);
+    color: var(--dam-on-accent);
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .28);
+    z-index: 1100;
+    -webkit-tap-highlight-color: transparent;
+}
+body.dam-mobile.dam-no-tabbar .dam-fab { bottom: calc(var(--dam-safe-bottom) + 16px); }
+body.dam-mobile .dam-fab:active { transform: scale(.96); }
+body.dam-mobile .dam-fab .dam-fab-plus { font-size: 24px; line-height: 1; }
+
+/* --------------------------------------------------------------------------
+   8. Moduli
+   -------------------------------------------------------------------------- */
+body.dam-mobile.dam-forms .module {
+    border: 1px solid var(--dam-border);
+    border-radius: var(--dam-radius);
+    background: var(--dam-surface);
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+/* #changelist porta anch'esso la classe "module": non deve però diventare
+   una scheda, altrimenti incornicia tutto l'elenco con un bordo inutile. */
+body.dam-mobile.dam-forms #changelist.module {
+    border: 0;
+    border-radius: 0;
+    background: none;
+    overflow: visible;
+}
+body.dam-mobile.dam-forms .module > h2,
+body.dam-mobile.dam-forms fieldset > h2 {
+    font-size: 13px;
+    padding: 10px 14px;
+    letter-spacing: .4px;
+}
+/* Il link "Mostra/Nascondi" di un fieldset richiudibile sta dentro
+   un'intestazione colorata: deve prenderne il colore del testo, altrimenti
+   resta blu su blu e non si legge. */
+body.dam-mobile.dam-forms .module > h2 a,
+body.dam-mobile.dam-forms fieldset > h2 a,
+body.dam-mobile.dam-forms .collapse-toggle {
+    color: inherit;
+    text-decoration: underline;
+}
+body.dam-mobile.dam-forms .form-row {
+    display: block;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--dam-border);
+    overflow-x: clip;
+}
+body.dam-mobile.dam-forms .form-row:last-child { border-bottom: 0; }
+/* Un fieldset richiuso deve restare richiuso: la regola di Django
+   (`fieldset.collapsed * { display: none }`) è meno specifica di quella qui
+   sopra, e senza questa riga le righe nascoste tornerebbero visibili come
+   strisce vuote. */
+body.dam-mobile.dam-forms fieldset.collapsed .form-row,
+body.dam-mobile.dam-forms fieldset.collapsed .description { display: none; }
+body.dam-mobile.dam-forms fieldset.collapsed { padding-bottom: 0; }
+body.dam-mobile.dam-forms .form-row > div { min-width: 0; }
+body.dam-mobile.dam-forms .form-row label {
+    display: block;
+    float: none;
+    width: auto;
+    margin: 0 0 4px;
+    padding: 0;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    text-transform: uppercase;
+    color: var(--dam-muted);
+}
+body.dam-mobile.dam-forms .form-row input[type="text"],
+body.dam-mobile.dam-forms .form-row input[type="number"],
+body.dam-mobile.dam-forms .form-row input[type="email"],
+body.dam-mobile.dam-forms .form-row input[type="url"],
+body.dam-mobile.dam-forms .form-row input[type="password"],
+body.dam-mobile.dam-forms .form-row input[type="search"],
+body.dam-mobile.dam-forms .form-row input[type="tel"],
+body.dam-mobile.dam-forms .form-row input[type="date"],
+body.dam-mobile.dam-forms .form-row input[type="time"],
+body.dam-mobile.dam-forms .form-row input[type="datetime-local"],
+body.dam-mobile.dam-forms .form-row textarea,
+body.dam-mobile.dam-forms .form-row select {
+    width: 100%;
+    max-width: 100%;
+    min-height: 44px;
+    padding: 8px 12px;
+    box-sizing: border-box;
+    font-size: 16px;   /* 16px: impedisce lo zoom automatico su iOS */
+    border-radius: var(--dam-radius-sm);
+}
+body.dam-mobile.dam-forms .form-row .checkbox-row label,
+body.dam-mobile.dam-forms .form-row label.vCheckboxLabel {
+    display: inline;
+    text-transform: none;
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--dam-text);
+}
+body.dam-mobile.dam-forms .form-row input[type="checkbox"],
+body.dam-mobile.dam-forms .form-row input[type="radio"] { width: 20px; height: 20px; }
+body.dam-mobile.dam-forms .help,
+body.dam-mobile.dam-forms .helptext {
+    display: block;
+    margin: 4px 0 0;
+    padding: 0;
+    font-size: 12px;
+    color: var(--dam-muted);
+}
+body.dam-mobile.dam-forms .errorlist { margin: 4px 0 0; padding: 0 0 0 16px; font-size: 12px; }
+
+/* Barra dei bottoni sempre visibile in fondo allo schermo. */
+body.dam-mobile.dam-forms .submit-row {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--dam-tabbar-h) + var(--dam-safe-bottom));
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 8px 12px;
+    background: var(--dam-surface);
+    border-top: 1px solid var(--dam-border);
+    box-shadow: 0 -2px 12px rgba(16, 24, 32, .1);
+    z-index: 1100;
+}
+body.dam-mobile.dam-no-tabbar.dam-forms .submit-row { bottom: var(--dam-safe-bottom); }
+body.dam-mobile.dam-forms .submit-row input[type="submit"],
+body.dam-mobile.dam-forms .submit-row button,
+body.dam-mobile.dam-forms .submit-row a {
+    flex: 1 1 auto;
+    min-height: 46px;
+    padding: 0 14px;
+    border-radius: var(--dam-radius-sm);
+    font-size: 15px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    float: none;
+    margin: 0;
+}
+body.dam-mobile.dam-forms .submit-row a.deletelink { flex: 0 0 auto; }
+/* Spazio in fondo per non finire sotto la barra dei bottoni. */
+body.dam-mobile.dam-forms.dam-has-submitrow #content { padding-bottom: 82px; }
+
+body.dam-mobile.dam-forms .inline-group { margin: 0 0 12px; }
+body.dam-mobile.dam-forms .inline-group .tabular { overflow-x: auto; }
+
+/* --------------------------------------------------------------------------
+   9. Casi particolari
+   -------------------------------------------------------------------------- */
+/* Nelle finestre pop-up (selettore di chiave esterna) la shell non serve. */
+body.popup .dam-appbar,
+body.popup .dam-tabbar,
+body.popup .dam-drawer,
+body.popup .dam-scrim,
+body.popup .dam-fab { display: none !important; }
+
+/* Pagina di accesso: solo campi comodi da toccare, niente shell. */
+body.login.dam-mobile { padding: 0; }
+body.login.dam-mobile #content { padding: 16px; }
+body.login.dam-mobile .form-row input { min-height: 46px; font-size: 16px; }
+
+@media print {
+    .dam-appbar, .dam-tabbar, .dam-drawer, .dam-scrim, .dam-sheet, .dam-fab { display: none !important; }
+    body.dam-mobile { padding: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dam-drawer, .dam-sheet, .dam-scrim, .dam-tile, .dam-tab-icon { transition: none !important; }
+}
+
+/* Elementi che la shell nasconde perché sostituiti da una versione mobile
+   (per esempio l'elenco classico per app sulla schermata iniziale). */
+body.dam-mobile .dam-hidden-module { display: none !important; }
+
+/* --------------------------------------------------------------------------
+   10. Widget: niente deve essere più largo dello schermo
+   Copre tutti i tipi di campo dell'admin (testo, data e ora, chiave esterna,
+   molti-a-molti, file, sola lettura, gruppi di opzioni) e gli editor di terze
+   parti più diffusi. Senza queste regole basta un campo per allargare tutta
+   la pagina e far comparire lo scorrimento orizzontale.
+   -------------------------------------------------------------------------- */
+body.dam-mobile .form-row,
+body.dam-mobile .form-row > div,
+body.dam-mobile .form-row .flex-container,
+body.dam-mobile .form-row .fieldBox { min-width: 0; }
+
+/* Più campi sulla stessa riga: su telefono diventano una colonna. */
+body.dam-mobile .form-row .form-multiline,
+body.dam-mobile .form-row .flex-container.form-multiline {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+body.dam-mobile .form-row .form-multiline > div {
+    width: 100%;
+    min-width: 0;
+    margin-right: 0 !important;
+}
+
+/* Data e ora, con le scorciatoie "oggi" e "adesso". */
+body.dam-mobile .form-row p.datetime {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    min-width: 0;
+}
+body.dam-mobile .form-row p.datetime input.vDateField,
+body.dam-mobile .form-row p.datetime input.vTimeField {
+    flex: 1 1 130px;
+    width: auto !important;
+    min-width: 0;
+}
+body.dam-mobile .form-row .datetimeshortcuts {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+/* Chiave esterna: i bottoni aggiungi/modifica/elimina vanno a capo. */
+body.dam-mobile .form-row .related-widget-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    max-width: 100%;
+    float: none;
+}
+body.dam-mobile .form-row .related-widget-wrapper > select,
+body.dam-mobile .form-row .related-widget-wrapper > input,
+body.dam-mobile .form-row .related-widget-wrapper > .select2-container {
+    flex: 1 1 100%;
+    min-width: 0;
+}
+body.dam-mobile .form-row .related-widget-wrapper-link {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--dam-radius-sm);
+    background: var(--dam-surface-2);
+    opacity: 1;
+}
+body.dam-mobile .select2-container { max-width: 100%; }
+
+/* Selettore a due colonne dei campi molti-a-molti: impilato. */
+body.dam-mobile .form-row .selector {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    float: none;
+}
+body.dam-mobile .form-row .selector .selector-available,
+body.dam-mobile .form-row .selector .selector-chosen {
+    width: 100%;
+    min-width: 0;
+    float: none;
+}
+body.dam-mobile .form-row .selector select { width: 100%; }
+body.dam-mobile .form-row .selector-chooser {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin: 6px 0;
+    padding: 0;
+    float: none;
+}
+
+/* Caricamento file e valore attuale. */
+body.dam-mobile .form-row input[type="file"] { max-width: 100%; }
+body.dam-mobile .form-row p.file-upload,
+body.dam-mobile .form-row .file-upload {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+/* Sola lettura e testi di aiuto: il testo lungo va a capo. */
+body.dam-mobile .form-row .readonly,
+body.dam-mobile .form-row div.help,
+body.dam-mobile .form-row .help {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
     word-break: break-word;
+    box-sizing: border-box;
+}
+body.dam-mobile .form-row .readonly img,
+body.dam-mobile .form-row .readonly iframe,
+body.dam-mobile .form-row .readonly table { max-width: 100%; }
+
+/* Gruppi di opzioni. */
+body.dam-mobile .form-row ul.radiolist,
+body.dam-mobile .form-row ul.radiolist.inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    min-width: 0;
+}
+body.dam-mobile .form-row ul.radiolist li { display: flex; align-items: center; gap: 6px; }
+
+/* Editor ricchi di terze parti (CKEditor, Summernote, TinyMCE). */
+body.dam-mobile .cke,
+body.dam-mobile .cke_chrome,
+body.dam-mobile .cke_inner,
+body.dam-mobile .cke_contents,
+body.dam-mobile .note-editor,
+body.dam-mobile .note-frame,
+body.dam-mobile .tox-tinymce {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+}
+body.dam-mobile .cke_top,
+body.dam-mobile .note-toolbar { max-width: 100%; overflow-x: auto; }
+
+/* Filtro per intervallo di date (django-admin-rangefilter) dentro il foglio. */
+.dam-sheet-body .admindatefilter form,
+.dam-sheet-body .admindatefilter .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+    box-sizing: border-box;
+}
+.dam-sheet-body .admindatefilter input[type="text"],
+.dam-sheet-body .admindatefilter input.vDateField {
+    flex: 1 1 130px;
+    width: auto;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+.dam-sheet-body .admindatefilter .controls > * { min-width: 0; max-width: 100%; }
+.dam-sheet-body #changelist-filter li,
+.dam-sheet-body #changelist-filter li a,
+.dam-sheet-body #changelist-filter summary,
+.dam-sheet-body #changelist-filter h3 {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    box-sizing: border-box;
 }
 
-/* Tema scuro admin di Django */
-html[data-theme="dark"] .dam-tile,
-@media (prefers-color-scheme: dark) {
-    html:not([data-theme="light"]) .dam-tile {
-        background: var(--darkened-bg, #1f2933);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-    }
-}
-
-/* --------------------------------------------------------------------------
-   2. Ottimizzazioni mobile per tutti i modelli
-   Applicate sotto i 1024px per non toccare l'esperienza desktop.
-   -------------------------------------------------------------------------- */
-@media (max-width: 1024px) {
-
-    /* Su schermi piccoli il grid diventa 2-3 colonne. */
-    .dam-mobile-menu {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-        gap: 10px;
-    }
-    .dam-tile { min-height: 96px; padding: 14px 8px; }
-    .dam-tile-icon { font-size: 26px; }
-    .dam-tile-label { font-size: 12px; }
-
-    /* Nasconde la sidebar delle azioni recenti e la nav-sidebar sull'index. */
-    body.dam-index #content-related { display: none; }
-    body.dam-index .colMS #content-main { width: 100%; }
-
-    /* Aumenta le aree tattili nei form. */
-    .form-row input[type="text"],
-    .form-row input[type="number"],
-    .form-row input[type="email"],
-    .form-row input[type="url"],
-    .form-row input[type="password"],
-    .form-row input[type="search"],
-    .form-row input[type="tel"],
-    .form-row input[type="date"],
-    .form-row input[type="time"],
-    .form-row input[type="datetime-local"],
-    .form-row textarea,
-    .form-row select {
-        min-height: 44px;
-        font-size: 16px;   /* impedisce lo zoom automatico su iOS */
-        padding: 8px 10px;
-        box-sizing: border-box;
-    }
-
-    /* Bottoni submit più visibili e comodi. */
-    .submit-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        padding: 10px;
-        position: sticky;
-        bottom: 0;
-        background: var(--body-bg, #fff);
-        border-top: 1px solid var(--border-color, #ddd);
-        z-index: 10;
-    }
-    .submit-row input,
-    .submit-row a.deletelink,
-    .submit-row a.closelink {
-        min-height: 44px;
-        padding: 10px 14px;
-        font-size: 14px;
-        border-radius: 8px;
-    }
-
-    /* Changelist: renderizza le tabelle come card impilate. */
-    .dam-cards #result_list,
-    .dam-cards #result_list thead {
-        display: block;
-    }
-    .dam-cards #result_list thead { display: none; }
-    .dam-cards #result_list tbody,
-    .dam-cards #result_list tr,
-    .dam-cards #result_list td {
-        display: block;
-        width: 100%;
-    }
-    .dam-cards #result_list tr {
-        margin: 0 0 12px;
-        padding: 10px 12px;
-        border-radius: 12px;
-        border: 1px solid var(--border-color, #e0e0e0);
-        background: var(--body-bg, #fff);
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    }
-    .dam-cards #result_list td {
-        padding: 6px 0;
-        border: none;
-        font-size: 14px;
-    }
-    .dam-cards #result_list td::before {
-        content: attr(data-label);
-        display: block;
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: .5px;
-        color: var(--body-quiet-color, #666);
-        margin-bottom: 2px;
-    }
-    .dam-cards #result_list td.action-checkbox {
-        display: inline-block;
-        width: auto;
-        vertical-align: middle;
-        margin-right: 8px;
-    }
-
-    /* Nasconde intestazioni ripetute che non servono su mobile. */
-    #changelist-filter h2,
-    #changelist-filter h3 {
-        font-size: 13px;
-    }
-
-    /* Impagina i filtri come drawer laterale attivabile via classe. */
-    #changelist-filter {
-        position: fixed;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        width: min(320px, 88vw);
-        transform: translateX(105%);
-        transition: transform .18s ease;
-        z-index: 9998;
-        overflow-y: auto;
-        background: var(--body-bg, #fff);
-        box-shadow: -6px 0 24px rgba(0, 0, 0, 0.15);
-        padding: 12px 14px;
-    }
-    #changelist-filter.dam-open { transform: translateX(0); }
-
-    .dam-filter-fab {
-        position: fixed;
-        right: 14px;
-        bottom: 14px;
-        z-index: 9997;
-        border: none;
-        border-radius: 999px;
-        padding: 12px 18px;
-        background: #417690;
-        color: #fff;
-        font-weight: 600;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
-    }
-
-    /* Tab bar in basso opzionale (Home / Elenchi / Impostazioni). */
-    .dam-tabbar {
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        display: flex;
-        justify-content: space-around;
-        padding: 4px 8px calc(env(safe-area-inset-bottom, 0px) + 4px);
-        background: var(--body-bg, #fff);
-        border-top: 1px solid var(--border-color, #ddd);
-        z-index: 9996;
-    }
-    .dam-tabbar a {
-        flex: 1;
-        text-align: center;
-        padding: 8px 4px;
-        font-size: 11px;
-        color: var(--body-fg, #333);
-        text-decoration: none;
-        line-height: 1.1;
-    }
-    .dam-tabbar a > span { display: block; font-size: 20px; margin-bottom: 2px; }
-    .dam-tabbar a.active { color: #417690; font-weight: 700; }
-}
-
-/* --------------------------------------------------------------------------
-   3. Tema scuro nativo dell'admin di Django (Django >= 4.2)
-   -------------------------------------------------------------------------- */
-html[data-theme="dark"] .dam-tile {
-    background: #1f2933;
-    color: #eaf1f7;
-}
-html[data-theme="dark"] .dam-tile:hover {
-    background: var(--dam-color);
-    color: #fff;
-}
-html[data-theme="dark"] #changelist-filter {
-    background: #1f2933;
-    color: #eaf1f7;
+/* Il contenuto di una cella va a capo invece di sporgere dalla scheda. */
+body.dam-mobile.dam-cards #result_list tbody td > *,
+body.dam-mobile.dam-cards #result_list tbody th > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    max-width: 100%;
 }
