@@ -802,42 +802,49 @@ body.dam-mobile .object-tools a:focus-visible {
     color: var(--dam-accent);
 }
 body.dam-mobile .object-tools a:active { transform: scale(.97); }
-/* Azioni di massa: restano nel form (Django le cerca lì), ma diventano una
-   riga compatta che va a capo invece di sfondare lo schermo. */
-body.dam-mobile #changelist-form .actions { display: none; }
-body.dam-mobile.dam-selection #changelist-form .actions {
+/* --------------------------------------------------------------------------
+   Azioni di massa.
+   Restano dentro #changelist-form, perché il JavaScript di Django le cerca
+   lì, e restano sempre in vista: nasconderle finché non si seleziona una
+   riga le rendeva introvabili, e con loro spariva l'unico modo di unire due
+   schede dall'elenco. Quando una selezione c'è, la riga si stacca e scende
+   in fondo allo schermo, a portata di pollice.
+   -------------------------------------------------------------------------- */
+body.dam-mobile #changelist-form .actions {
     display: flex;
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: calc(var(--dam-tabbar-h) + var(--dam-safe-bottom));
-    z-index: 1100;
-    border: 0;
-    border-top: 1px solid var(--dam-border);
-    border-radius: 0;
-    box-shadow: 0 -2px 12px rgba(16, 24, 32, .14);
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
-    margin: 0;
+    margin: 0 0 10px;
     padding: 10px 12px;
     box-sizing: border-box;
+    border: 1px solid var(--dam-border);
+    border-radius: var(--dam-radius);
     background: var(--dam-surface);
 }
-body.dam-mobile.dam-no-tabbar.dam-selection #changelist-form .actions { bottom: var(--dam-safe-bottom); }
-/* Con una selezione in corso il bottone flottante lascia il posto alle azioni. */
-body.dam-mobile.dam-selection .dam-fab { display: none; }
+/* Etichetta, elenco e bottone su una riga sola: tre righe per le azioni
+   rubavano mezzo schermo prima ancora di far vedere il primo risultato.
+   Attenzione: in Django il <select> sta DENTRO la <label>, quindi è
+   l'etichetta a dover diventare a sua volta una riga flessibile. */
 body.dam-mobile #changelist-form .actions label {
-    flex: 1 1 100%;
+    /* Base piccola e min-width zero: le voci lunghe dell'elenco ("Cancella
+       Pazienti selezionati") gonfierebbero altrimenti la base flessibile e
+       manderebbero il bottone a capo. */
+    flex: 1 1 120px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     min-width: 0;
+    margin: 0;
     font-size: 12px;
     font-weight: 700;
     letter-spacing: .4px;
     text-transform: uppercase;
     color: var(--dam-muted);
 }
+body.dam-mobile #changelist-form .actions label select { flex: 1 1 60px; min-width: 0; }
 body.dam-mobile #changelist-form .actions select {
-    flex: 1 1 auto;
+    flex: 1 1 120px;
     min-width: 0;
     max-width: 100%;
     min-height: 44px;
@@ -850,6 +857,8 @@ body.dam-mobile #changelist-form .actions .button {
     padding: 0 16px;
     border-radius: var(--dam-radius-sm);
 }
+/* «0 di 12 selezionati» non dice nulla finché non si seleziona qualcosa. */
+body.dam-mobile:not(.dam-selection) #changelist-form .actions .action-counter { display: none; }
 body.dam-mobile #changelist-form .actions .action-counter,
 body.dam-mobile #changelist-form .actions .all,
 body.dam-mobile #changelist-form .actions .question,
@@ -861,6 +870,89 @@ body.dam-mobile #changelist-form .actions .clear {
     color: var(--dam-muted);
 }
 
+/* Con delle righe selezionate la riga azioni scende in fondo allo schermo. */
+body.dam-mobile.dam-selection #changelist-form .actions {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--dam-tabbar-h) + var(--dam-safe-bottom));
+    z-index: 1100;
+    margin: 0;
+    border: 0;
+    border-top: 1px solid var(--dam-border);
+    border-radius: 0;
+    box-shadow: 0 -2px 12px rgba(16, 24, 32, .14);
+}
+body.dam-mobile.dam-no-tabbar.dam-selection #changelist-form .actions { bottom: var(--dam-safe-bottom); }
+/* Il bottone flottante lascia il posto alle azioni. */
+body.dam-mobile.dam-selection .dam-fab { display: none; }
+
+body.dam-mobile #changelist { display: block; }
+body.dam-mobile #changelist .results { overflow-x: auto; margin: 0; border: 0; }
+body.dam-mobile #changelist-filter { display: none; }   /* spostato nel foglio */
+/* Del gruppo strumenti sparisce solo il "+", che è già nel bottone
+   flottante: gli altri strumenti (storia, azioni su misura del progetto)
+   devono restare raggiungibili. */
+/* Il selettore cita anche `li`: la regola che più sotto rende visibili le
+   voci del gruppo ha un elemento in più e vincerebbe sul solo nome di classe. */
+body.dam-mobile .object-tools li.dam-hidden-tool,
+body.dam-mobile .dam-hidden-tool,
+body.dam-mobile .object-tools.dam-empty-tools { display: none; }
+
+/* --------------------------------------------------------------------------
+   Strumenti dell'oggetto.
+   Django li rende come pillole piene alte 26 px con testo di 11 px tutto
+   maiuscolo: pesanti da vedere e troppo piccole da centrare col dito (il
+   minimo ragionevole è 44 px). Qui diventano chip leggeri e toccabili,
+   scritti in tondo, che vanno a capo da soli quando sono tanti.
+   -------------------------------------------------------------------------- */
+body.dam-mobile .object-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    float: none;
+    margin: 0 0 12px;
+    padding: 0;
+    list-style: none;
+}
+body.dam-mobile .object-tools li {
+    display: block;
+    float: none;
+    height: auto;
+    margin: 0;
+    max-width: 100%;
+}
+body.dam-mobile .object-tools a,
+body.dam-mobile .object-tools button,
+body.dam-mobile .object-tools input[type="submit"] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+    min-height: 44px;
+    padding: 0 16px;
+    box-sizing: border-box;
+    border: 1px solid color-mix(in srgb, var(--dam-accent) 35%, transparent);
+    border-radius: 22px;
+    background: var(--dam-surface);
+    background-image: none;   /* le iconcine di sfondo sfalsano il testo */
+    color: var(--dam-accent);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-tap-highlight-color: transparent;
+}
+body.dam-mobile .object-tools a:hover,
+body.dam-mobile .object-tools a:focus-visible {
+    background: color-mix(in srgb, var(--dam-accent) 10%, transparent);
+    color: var(--dam-accent);
+}
+body.dam-mobile .object-tools a:active { transform: scale(.97); }
 /* Tabella dei risultati come elenco di schede. */
 body.dam-mobile.dam-cards #result_list,
 body.dam-mobile.dam-cards #result_list tbody,
@@ -1259,6 +1351,20 @@ body.dam-mobile .dam-hidden-module { display: none !important; }
    parti più diffusi. Senza queste regole basta un campo per allargare tutta
    la pagina e far comparire lo scorrimento orizzontale.
    -------------------------------------------------------------------------- */
+/* `responsive.css` di Django dà al contenitore del campo
+   `width: calc(100vw - 30px)`: una misura presa dalla finestra, che non sa
+   nulla dei margini della pagina né del riquadro in cui il pacchetto mette
+   il modulo. Risultato: ogni campo sporge dalla sua cella di una ventina di
+   pixel. Qui torna a misurarsi sul contenitore vero. */
+body.dam-mobile .aligned .form-row,
+body.dam-mobile .aligned .form-row > div,
+body.dam-mobile form .aligned .form-row > div {
+    width: auto;
+    max-width: 100%;
+}
+body.dam-mobile .form-row > div,
+body.dam-mobile .form-row .flex-container { max-width: 100%; }
+
 body.dam-mobile .form-row,
 body.dam-mobile .form-row > div,
 body.dam-mobile .form-row .flex-container,

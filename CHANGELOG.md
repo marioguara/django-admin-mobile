@@ -6,6 +6,21 @@ e il progetto usa [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-09-19
+
+### Corretto
+- **I campi sporgevano dalla loro cella** di una ventina di pixel su quasi
+  tutte le schede. `responsive.css` di Django dà al contenitore del campo
+  `width: calc(100vw - 30px)`: una misura presa dalla finestra, che non sa
+  nulla dei margini della pagina né del riquadro in cui il pacchetto mette il
+  modulo. Ora il campo si misura sul contenitore vero.
+- **Le azioni di massa erano introvabili.** Comparivano solo dopo aver
+  selezionato una riga, e chi non trovava la casella di selezione non poteva
+  più raggiungerle — spariva così anche l'unico modo di unire due schede
+  dall'elenco. Ora sono sempre in vista, su una riga sola di 66 px invece di
+  tre da 150; quando una selezione c'è, la riga scende in fondo allo schermo.
+- Rimosso un blocco di regole duplicato che vinceva su quelle buone.
+
 ## [0.3.3] - 2026-09-19
 
 ### Modificato

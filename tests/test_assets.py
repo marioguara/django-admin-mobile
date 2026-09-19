@@ -87,6 +87,26 @@ def test_only_the_replaced_add_link_is_hidden():
     assert "dam-empty-tools" in JS
 
 
+def test_fields_measure_against_their_container():
+    """`responsive.css` di Django dà al contenitore del campo
+    `width: calc(100vw - 30px)`: una misura presa dalla finestra, che ignora
+    i margini della pagina e il riquadro in cui sta il modulo. Senza questa
+    regola ogni campo sporge dalla sua cella di una ventina di pixel."""
+    rule = _rule("body.dam-mobile .aligned .form-row,")
+    assert "width: auto" in rule
+    assert "max-width: 100%" in rule
+
+
+def test_bulk_actions_are_always_visible():
+    """Nasconderle finché non si seleziona una riga le rendeva introvabili,
+    e con loro spariva l'unico modo di unire due schede dall'elenco."""
+    rule = _rule("body.dam-mobile #changelist-form .actions {")
+    assert "display: flex" in rule
+    assert "display: none" not in rule
+    # Con una selezione in corso scende in fondo allo schermo.
+    assert "body.dam-mobile.dam-selection #changelist-form .actions" in CSS
+
+
 @pytest.mark.parametrize("token", [
     "--dam-safe-bottom",
     "env(safe-area-inset-bottom",
