@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-admin-mobile"
-version = "0.3.2"
+version = "0.3.3"
 description = "L'admin di Django come una normale app per telefono: barra in alto, barra di navigazione in basso, menu laterale, elenchi a schede."
 readme = "README.md"
 license = { file = "LICENSE" }

@@ -693,6 +693,15 @@
                 CL.fab.appendChild(el("span", "dam-fab-plus", "+"));
                 CL.fab.appendChild(el("span", null, L.add || "Aggiungi"));
                 document.body.appendChild(CL.fab);
+                // Sparisce solo la voce sostituita dal bottone flottante:
+                // gli altri strumenti del progetto restano raggiungibili.
+                CL.hiddenTool = closest(add, "li") || add;
+                CL.hiddenTool.classList.add("dam-hidden-tool");
+                var tools = closest(add, ".object-tools");
+                if (tools && !tools.querySelector("li:not(.dam-hidden-tool)")) {
+                    tools.classList.add("dam-empty-tools");
+                    CL.emptyTools = tools;
+                }
             }
         }
         if (CL.fab) {
@@ -737,6 +746,8 @@
         unpark(filters);
         if (CL.toolbar) { CL.toolbar.hidden = true; }
         if (CL.fab) { CL.fab.hidden = true; }
+        if (CL.hiddenTool) { CL.hiddenTool.classList.remove("dam-hidden-tool"); }
+        if (CL.emptyTools) { CL.emptyTools.classList.remove("dam-empty-tools"); }
         document.body.classList.remove("dam-has-fab", "dam-selection");
         closePanel();
     }

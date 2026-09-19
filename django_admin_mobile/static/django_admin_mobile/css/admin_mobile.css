@@ -739,7 +739,69 @@ body.dam-mobile .dam-toolbar .dam-filter-btn[data-count]:not([data-count="0"])::
 body.dam-mobile #changelist { display: block; }
 body.dam-mobile #changelist .results { overflow-x: auto; margin: 0; border: 0; }
 body.dam-mobile #changelist-filter { display: none; }   /* spostato nel foglio */
-body.dam-mobile.dam-has-fab .object-tools { display: none; }  /* sostituito dal bottone flottante */
+/* Del gruppo strumenti sparisce solo il "+", che è già nel bottone
+   flottante: gli altri strumenti (storia, azioni su misura del progetto)
+   devono restare raggiungibili. */
+/* Il selettore cita anche `li`: la regola che più sotto rende visibili le
+   voci del gruppo ha un elemento in più e vincerebbe sul solo nome di classe. */
+body.dam-mobile .object-tools li.dam-hidden-tool,
+body.dam-mobile .dam-hidden-tool,
+body.dam-mobile .object-tools.dam-empty-tools { display: none; }
+
+/* --------------------------------------------------------------------------
+   Strumenti dell'oggetto.
+   Django li rende come pillole piene alte 26 px con testo di 11 px tutto
+   maiuscolo: pesanti da vedere e troppo piccole da centrare col dito (il
+   minimo ragionevole è 44 px). Qui diventano chip leggeri e toccabili,
+   scritti in tondo, che vanno a capo da soli quando sono tanti.
+   -------------------------------------------------------------------------- */
+body.dam-mobile .object-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    float: none;
+    margin: 0 0 12px;
+    padding: 0;
+    list-style: none;
+}
+body.dam-mobile .object-tools li {
+    display: block;
+    float: none;
+    height: auto;
+    margin: 0;
+    max-width: 100%;
+}
+body.dam-mobile .object-tools a,
+body.dam-mobile .object-tools button,
+body.dam-mobile .object-tools input[type="submit"] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+    min-height: 44px;
+    padding: 0 16px;
+    box-sizing: border-box;
+    border: 1px solid color-mix(in srgb, var(--dam-accent) 35%, transparent);
+    border-radius: 22px;
+    background: var(--dam-surface);
+    background-image: none;   /* le iconcine di sfondo sfalsano il testo */
+    color: var(--dam-accent);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-tap-highlight-color: transparent;
+}
+body.dam-mobile .object-tools a:hover,
+body.dam-mobile .object-tools a:focus-visible {
+    background: color-mix(in srgb, var(--dam-accent) 10%, transparent);
+    color: var(--dam-accent);
+}
+body.dam-mobile .object-tools a:active { transform: scale(.97); }
 /* Azioni di massa: restano nel form (Django le cerca lì), ma diventano una
    riga compatta che va a capo invece di sfondare lo schermo. */
 body.dam-mobile #changelist-form .actions { display: none; }

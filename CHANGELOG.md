@@ -6,6 +6,21 @@ e il progetto usa [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-09-19
+
+### Modificato
+- **Gli strumenti dell'oggetto** («Storia», «Vedi sul sito», le azioni che il
+  progetto aggiunge di suo) su telefono diventano chip leggeri: bordo invece
+  di riempimento, scritti in tondo a 14 px, alti 44 px. Django li rende come
+  pillole piene alte 26 px con testo di 11 px tutto maiuscolo — pesanti da
+  vedere e troppo piccole da centrare col dito.
+
+### Corretto
+- **Negli elenchi spariva tutto il gruppo strumenti**, non solo il «+»
+  sostituito dal bottone flottante: gli strumenti aggiunti dal progetto
+  diventavano irraggiungibili. Ora si nasconde solo la voce sostituita, e il
+  gruppo scompare soltanto se resta vuoto.
+
 ## [0.3.2] - 2026-09-19
 
 Rilievi emersi passando in rassegna 92 schermate dell'admin a 320 e 360 px.

@@ -71,6 +71,22 @@ def test_confirmation_pages_get_an_action_bar():
     assert 'if (KIND === "changelist") { return null; }' in JS
 
 
+def test_object_tools_are_big_enough_to_tap():
+    """Django li rende alti 26 px con testo di 11 px tutto maiuscolo:
+    pesanti da vedere e troppo piccoli da centrare col dito."""
+    rule = _rule("body.dam-mobile .object-tools a,")
+    assert "min-height: 44px" in rule
+    assert "text-transform: none" in rule
+
+
+def test_only_the_replaced_add_link_is_hidden():
+    """Nascondere tutto il gruppo renderebbe irraggiungibili gli strumenti
+    che il progetto aggiunge di suo accanto al «+»."""
+    assert "body.dam-mobile .object-tools li.dam-hidden-tool" in CSS
+    assert 'classList.add("dam-hidden-tool")' in JS
+    assert "dam-empty-tools" in JS
+
+
 @pytest.mark.parametrize("token", [
     "--dam-safe-bottom",
     "env(safe-area-inset-bottom",
