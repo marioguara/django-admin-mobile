@@ -6,6 +6,19 @@ e il progetto usa [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-09-29
+
+### Corretto
+- **La striscia bianca sotto la barra azioni.** Lo spazio per la barretta home
+  di iPhone veniva contato due volte: una nella posizione della barra, una nel
+  suo riempimento. Il risultato era una fascia bianca vuota, alta quanto la
+  barretta, dentro la barra: copriva il contenuto e all'ispezione risultava
+  parte di `.submit-row`. Ora quello spazio lo tiene solo chi tocca davvero il
+  bordo dello schermo, e solo ad app installata (`display-mode: standalone`),
+  dove la barretta c'è davvero: dentro una scheda del browser quel bordo lo
+  gestisce già il browser. Quando serve si usa `max(8px, area sicura)` invece
+  della somma.
+
 ## [0.4.0] - 2026-09-28
 
 ### Aggiunto

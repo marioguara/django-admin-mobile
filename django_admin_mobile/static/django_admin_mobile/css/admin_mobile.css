@@ -1211,7 +1211,11 @@ body.dam-mobile.dam-forms .submit-row {
     align-items: center;
     gap: 8px;
     margin: 0;
-    padding: 8px 12px calc(8px + var(--dam-safe-bottom));
+    /* Niente spazio per la barretta home qui: sotto c'è la barra di
+       navigazione, che quello spazio lo tiene già. Contarlo due volte
+       lasciava dentro la barra una striscia bianca vuota alta quanto la
+       barretta, che copriva il contenuto e sembrava un difetto. */
+    padding: 8px 12px;
     box-sizing: border-box;
     background: var(--dam-surface);
     border-top: 1px solid var(--dam-border);
@@ -1224,8 +1228,25 @@ body.dam-mobile.dam-forms .submit-row {
    due barre fisse una sopra l'altra rubano 120 px di schermo. Si esce con
    il tasto indietro in alto, e il menu resta sotto la lente. */
 body.dam-mobile.dam-editing .dam-tabbar { display: none; }
-body.dam-mobile.dam-editing.dam-forms .submit-row { bottom: 0; }
-body.dam-mobile.dam-no-tabbar.dam-forms .submit-row { bottom: 0; }
+/* Appoggiata al bordo dello schermo. */
+body.dam-mobile.dam-editing.dam-forms .submit-row,
+body.dam-mobile.dam-no-tabbar.dam-forms .submit-row {
+    bottom: 0;
+    padding-bottom: 8px;
+}
+
+/* Lo spazio per la barretta home di iPhone serve solo quando l'app è
+   installata e si prende tutto lo schermo: lì i bottoni le finirebbero
+   sotto. Dentro una scheda del browser il bordo inferiore lo gestisce già
+   il browser, e riservarlo comunque lasciava una fascia bianca vuota in
+   fondo alla barra. Si prende il più grande fra i due, non la somma. */
+@media (display-mode: standalone), (display-mode: fullscreen),
+       (display-mode: minimal-ui) {
+    body.dam-mobile.dam-editing.dam-forms .submit-row,
+    body.dam-mobile.dam-no-tabbar.dam-forms .submit-row {
+        padding-bottom: max(8px, var(--dam-safe-bottom));
+    }
+}
 
 /* In barra resta solo l'azione principale più il tasto delle altre. */
 body.dam-mobile.dam-forms.dam-actions-sheet .submit-row > *:not(.dam-primary):not(.dam-more) {
@@ -1310,7 +1331,8 @@ body.dam-mobile.dam-has-submitrow {
 }
 body.dam-mobile.dam-editing.dam-has-submitrow,
 body.dam-mobile.dam-no-tabbar.dam-has-submitrow {
-    padding-bottom: calc(var(--dam-submitrow-h, 72px) + var(--dam-safe-bottom) + 8px);
+    /* L'altezza misurata comprende già lo spazio per la barretta home. */
+    padding-bottom: calc(var(--dam-submitrow-h, 72px) + 8px);
 }
 
 body.dam-mobile.dam-forms .inline-group { margin: 0 0 12px; }
