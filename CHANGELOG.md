@@ -6,6 +6,22 @@ e il progetto usa [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-28
+
+### Aggiunto
+- **Lo stesso menu anche sul computer.** Su schermo grande l'elenco di app di
+  Django lascia il posto al menu del pacchetto: stesse voci, stesse icone,
+  stesso ordine e stessa ricerca del telefono, quindi chi passa dal cellulare
+  al desktop non deve reimparare dove sono le cose. Il menu è fisso a sinistra
+  e si stringe a sole icone con un tocco; la scelta resta salvata nel browser.
+  Si spegne con `ADMIN_MOBILE["SIDEBAR"] = False`.
+
+### Cambiato
+- Le icone non riguardano più solo il telefono: il modello si chiama ora
+  **Icone del menu** (prima «Icone menu mobile») e i testi di aiuto parlano di
+  menu, non di griglia mobile. Nessun dato da migrare: cambiano solo le
+  etichette.
+
 ## [0.3.4] - 2026-09-19
 
 ### Corretto

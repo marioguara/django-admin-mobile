@@ -1609,3 +1609,96 @@ body.dam-has-submitrow .dam-install { display: none !important; }
     color: inherit;
     font-weight: 600;
 }
+
+/* =========================================================================
+   Menu a sinistra su schermo grande (body.dam-desktop)
+
+   Le stesse voci e le stesse icone del telefono prendono il posto
+   dell'elenco di app di Django, che viene nascosto insieme al suo
+   pulsante di apertura. Il menu si può stringere a sole icone: la scelta
+   resta salvata nel browser.
+   ========================================================================= */
+
+body.dam-desktop #nav-sidebar,
+body.dam-desktop #toggle-nav-sidebar { display: none !important; }
+
+/* Django dà a `.main.shifted` il margine per la sua sidebar: qui il posto
+   lo occupa la nostra, che è un elemento flex vero. */
+body.dam-desktop .main.shifted { margin-left: 0; }
+
+.dam-sidebar {
+    flex: 0 0 258px;
+    width: 258px;
+    align-self: flex-start;
+    position: sticky;
+    top: 0;
+    max-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--dam-surface);
+    border-right: 1px solid var(--dam-border);
+    color: var(--dam-text);
+    transition: flex-basis .15s ease, width .15s ease;
+    z-index: 2;
+}
+
+.dam-sidebar-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--dam-border);
+    min-height: 48px;
+}
+.dam-sidebar-title {
+    font-weight: 700;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.dam-sidebar-toggle {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--dam-border);
+    border-radius: 8px;
+    background: var(--dam-surface-2);
+    color: var(--dam-text);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+}
+.dam-sidebar-toggle:hover { background: var(--dam-surface); border-color: var(--dam-accent); }
+
+.dam-sidebar-search { padding: 10px 12px; border-bottom: 1px solid var(--dam-border); }
+.dam-sidebar-search input {
+    width: 100%;
+    box-sizing: border-box;
+    height: auto;
+    padding: 7px 10px;
+    border: 1px solid var(--dam-border);
+    border-radius: 8px;
+    background: var(--dam-surface-2);
+    color: var(--dam-text);
+    font-size: 13px;
+}
+.dam-sidebar-search input:focus { outline: 2px solid var(--dam-accent); outline-offset: -1px; }
+
+.dam-sidebar-body { flex: 1 1 auto; overflow-y: auto; padding: 6px 0 14px; }
+.dam-sidebar .dam-group + .dam-group { margin-top: 2px; }
+.dam-sidebar .dam-link { font-size: 13.5px; padding: 8px 12px; }
+.dam-sidebar .dam-empty { padding: 10px 14px; color: var(--dam-muted); font-size: 13px; }
+
+/* Menu stretto: restano solo le icone, il nome arriva col passaggio del mouse. */
+.dam-sidebar.dam-sidebar-chiusa { flex-basis: 56px; width: 56px; }
+.dam-sidebar.dam-sidebar-chiusa .dam-sidebar-title,
+.dam-sidebar.dam-sidebar-chiusa .dam-sidebar-search,
+.dam-sidebar.dam-sidebar-chiusa .dam-group-title,
+.dam-sidebar.dam-sidebar-chiusa .dam-link-label,
+.dam-sidebar.dam-sidebar-chiusa .dam-link-add { display: none; }
+.dam-sidebar.dam-sidebar-chiusa .dam-link { justify-content: center; padding: 10px 0; }
+.dam-sidebar.dam-sidebar-chiusa .dam-sidebar-head { justify-content: center; padding: 10px 0; }
+
+/* Il contenuto non deve restare schiacciato dal menu. */
+body.dam-desktop .main > .content { min-width: 0; }

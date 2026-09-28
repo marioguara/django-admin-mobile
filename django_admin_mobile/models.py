@@ -15,7 +15,7 @@ class MenuIconQuerySet(models.QuerySet):
 
 
 class MenuIcon(models.Model):
-    """Configurazione dell'icona di un'app o di un modello nel menu mobile."""
+    """Icona di un'app o di un modello nel menu: la stessa su telefono e su schermo grande."""
 
     app_label = models.CharField(
         max_length=100,
@@ -53,11 +53,11 @@ class MenuIcon(models.Model):
     )
     order = models.IntegerField(
         default=0,
-        help_text="Ordinamento crescente all'interno della griglia mobile.",
+        help_text="Ordinamento crescente all'interno del menu.",
     )
     visible = models.BooleanField(
         default=True,
-        help_text="Se disattivato, il bottone non compare nel menu mobile.",
+        help_text="Se disattivato, la voce non compare nel menu.",
     )
     pinned = models.BooleanField(
         default=False,
@@ -71,8 +71,8 @@ class MenuIcon(models.Model):
     objects = MenuIconQuerySet.as_manager()
 
     class Meta:
-        verbose_name = "Icona menu mobile"
-        verbose_name_plural = "Icone menu mobile"
+        verbose_name = "Icona del menu"
+        verbose_name_plural = "Icone del menu"
         ordering = ("order", "app_label", "model_name")
         unique_together = (("app_label", "model_name"),)
 

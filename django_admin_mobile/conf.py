@@ -33,6 +33,9 @@ DEFAULTS = {
     "FORMS": True,
     # Nasconde header, breadcrumb e sidebar nativi di Django su mobile.
     "HIDE_DJANGO_CHROME": True,
+    # Su schermo grande sostituisce l'elenco delle app di Django con lo stesso
+    # menu a icone del telefono, fisso a sinistra e richiudibile.
+    "SIDEBAR": True,
     # Numero massimo di voci nella barra in basso (Home e Menu inclusi).
     "MAX_TABS": 5,
     # Voci della barra in basso. Vuoto = ricavate dalle icone "in evidenza".

@@ -925,6 +925,117 @@
         });
     }
 
+    // ── Menu a sinistra su schermo grande ────────────────────────────────
+    //
+    // Stesse voci, stesse icone e stessa ricerca del telefono, al posto
+    // dell'elenco di app di Django: chi passa dal cellulare al computer
+    // ritrova lo stesso menu nello stesso ordine.
+
+    var SIDEBAR_KEY = "dam-sidebar";
+
+    function sidebarClosed() {
+        try { return window.localStorage.getItem(SIDEBAR_KEY) === "chiusa"; }
+        catch (e) { return false; }
+    }
+
+    function filterSections(sections, needle, empty) {
+        var found = 0;
+        each(sections, function (section) {
+            var shown = 0;
+            each(section.damRows, function (row) {
+                var hit = !needle || row.damLabel.indexOf(needle) !== -1;
+                row.hidden = !hit;
+                if (hit) { shown += 1; }
+            });
+            section.hidden = shown === 0;
+            found += shown;
+        });
+        if (empty) { empty.hidden = found !== 0; }
+    }
+
+    function buildSidebar() {
+        var side = el("aside", "dam-sidebar");
+        side.setAttribute("aria-label", L.menu || "Menu");
+
+        var head = el("div", "dam-sidebar-head");
+        var toggle = el("button", "dam-sidebar-toggle", "☰");
+        toggle.type = "button";
+        toggle.title = L.menu || "Menu";
+        toggle.setAttribute("aria-label", L.menu || "Menu");
+        toggle.addEventListener("click", function () {
+            var chiusa = side.classList.toggle("dam-sidebar-chiusa");
+            document.body.classList.toggle("dam-sidebar-stretta", chiusa);
+            try { window.localStorage.setItem(SIDEBAR_KEY, chiusa ? "chiusa" : "aperta"); }
+            catch (e) { /* storage negato */ }
+        });
+        head.appendChild(toggle);
+        head.appendChild(el("span", "dam-sidebar-title", CFG.title || ""));
+        side.appendChild(head);
+
+        var searchWrap = el("div", "dam-sidebar-search");
+        var search = el("input");
+        search.type = "search";
+        search.placeholder = L.searchMenu || "Cerca…";
+        search.setAttribute("aria-label", L.searchMenu || "Cerca");
+        searchWrap.appendChild(search);
+        side.appendChild(searchWrap);
+
+        var body = el("div", "dam-sidebar-body");
+        var empty = el("p", "dam-empty", L.noResults || "Nessun risultato.");
+        empty.hidden = true;
+
+        var sections = [];
+        each(CFG.groups, function (group) {
+            var section = el("section", "dam-group");
+            section.appendChild(el("h2", "dam-group-title", group.name));
+            var rows = [];
+            each(group.items, function (item) {
+                var row = buildDrawerLink(item);
+                // Col menu ristretto resta solo l'icona: il nome va nel titolo.
+                row.firstChild.title = item.label;
+                section.appendChild(row);
+                rows.push(row);
+            });
+            section.damRows = rows;
+            body.appendChild(section);
+            sections.push(section);
+        });
+        body.appendChild(empty);
+        side.appendChild(body);
+
+        search.addEventListener("input", function () {
+            filterSections(sections, search.value.trim().toLowerCase(), empty);
+        });
+        // Cercando si riapre da sola: a menu stretto la casella non si vede.
+        search.addEventListener("focus", function () {
+            side.classList.remove("dam-sidebar-chiusa");
+            document.body.classList.remove("dam-sidebar-stretta");
+        });
+
+        if (sidebarClosed()) { side.classList.add("dam-sidebar-chiusa"); }
+        return side;
+    }
+
+    function enterDesktop() {
+        if (!F.sidebar || KIND === "login") { return; }
+        // Le finestrelle "aggiungi" di Django non hanno menu: non serve nemmeno qui.
+        if (document.body.classList.contains("popup")) { return; }
+        var main = document.getElementById("main") || document.querySelector(".main");
+        if (!main) { return; }
+
+        if (!S.sidebar) { S.sidebar = buildSidebar(); }
+        if (S.sidebar.parentNode !== main) { main.insertBefore(S.sidebar, main.firstChild); }
+        document.body.classList.add("dam-desktop");
+        if (S.sidebar.classList.contains("dam-sidebar-chiusa")) {
+            document.body.classList.add("dam-sidebar-stretta");
+        }
+    }
+
+    function leaveDesktop() {
+        document.body.classList.remove("dam-desktop", "dam-sidebar-stretta");
+        if (S.sidebar && S.sidebar.parentNode) { S.sidebar.parentNode.removeChild(S.sidebar); }
+    }
+
     // ── Attivazione / disattivazione ─────────────────────────────────────
     var built = false;
 
@@ -970,7 +1081,8 @@
     }
 
     function apply() {
-        if (mq.matches) { enterMobile(); } else { leaveMobile(); }
+        if (mq.matches) { leaveDesktop(); enterMobile(); }
+        else { leaveMobile(); enterDesktop(); }
     }
 
     document.addEventListener("keydown", function (event) {

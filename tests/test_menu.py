@@ -6,6 +6,7 @@ import pytest
 from django.template import Context, Template
 from django.utils.translation import gettext_lazy as _
 
+from django_admin_mobile.conf import get_config
 from django_admin_mobile.menu import build_items, build_menu, build_tabs
 from django_admin_mobile.models import MenuIcon
 
@@ -148,3 +149,16 @@ def test_config_script_escapes_angle_brackets():
     html = tpl.render(Context({"available_apps": app_list}))
     assert "</script><script>" not in html
     assert "\\u003C" in html
+
+
+@pytest.mark.django_db
+def test_il_menu_di_sinistra_e_acceso_di_default():
+    """Su schermo grande le stesse voci sostituiscono l'elenco di app di Django."""
+    menu = build_menu({"available_apps": APP_LIST})
+    assert menu["features"]["sidebar"] is True
+
+
+@pytest.mark.django_db
+def test_il_menu_di_sinistra_si_puo_spegnere():
+    menu = build_menu({"available_apps": APP_LIST}, config={**get_config(), "SIDEBAR": False})
+    assert menu["features"]["sidebar"] is False

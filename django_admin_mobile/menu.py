@@ -253,6 +253,7 @@ def build_menu(context=None, app_list=None, config=None):
             "fab": bool(config.get("FAB")),
             "forms": bool(config.get("FORMS")),
             "hideChrome": bool(config.get("HIDE_DJANGO_CHROME")),
+            "sidebar": bool(config.get("SIDEBAR")),
         },
         "urls": {
             "home": home_url,

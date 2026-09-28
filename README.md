@@ -18,7 +18,11 @@ l'admin esistente:
 | **Installazione** | l'admin si aggiunge alla schermata iniziale e si apre a tutto schermo, come un'app |
 | **Menu modificabile** | chi usa il gestionale sposta le voci trascinandole, cambia le icone e sceglie cosa mettere nella barra in basso |
 
-Da computer non cambia nulla: l'admin resta quello di Django.
+Da computer l'admin resta quello di Django, con una differenza: **lo stesso
+menu a icone prende il posto dell'elenco di app nella colonna di sinistra**,
+così le sezioni stanno nello stesso ordine e con le stesse icone su entrambi
+gli schermi. Si stringe a sole icone con un tocco e si spegne con
+`ADMIN_MOBILE["SIDEBAR"] = False`.
 
 - Zero dipendenze oltre Django. Compatibile con Django 3.2 → 5.x.
 - Nessuna modifica ai template del progetto: basta un tag.
@@ -119,6 +123,7 @@ ADMIN_MOBILE = {
     "FAB": True,                # bottone flottante "aggiungi"
     "FORMS": True,              # adattamento dei campi
     "HIDE_DJANGO_CHROME": True, # nasconde header, briciole e sidebar su telefono
+    "SIDEBAR": True,            # su desktop sostituisce il menu di Django col nostro
 }
 ```
 
