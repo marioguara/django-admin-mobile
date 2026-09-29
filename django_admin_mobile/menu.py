@@ -106,12 +106,15 @@ def build_items(app_list, config=None, include_hidden=False):
     excluded_models = {m.lower() for m in (config.get("EXCLUDE_MODELS") or [])}
 
     items = []
-    for app in app_list or []:
+    # `available_apps` arriva già nell'ordine che il progetto ha scelto
+    # (`AdminSite.get_app_list`): quell'ordine è un'informazione, non un
+    # dettaglio, e va conservato come criterio di riserva.
+    for posizione_app, app in enumerate(app_list or []):
         app_label = app.get("app_label") or ""
         if app_label in excluded_apps:
             continue
         app_name = _text(app.get("name")) or app_label
-        for model in app.get("models") or []:
+        for posizione_modello, model in enumerate(app.get("models") or []):
             model_key = (model.get("object_name") or "").lower()
             if f"{app_label}.{model_key}" in excluded_models:
                 continue
@@ -138,10 +141,15 @@ def build_items(app_list, config=None, include_hidden=False):
                     "app_label": _text(app_label),
                     "app_name": _text(app_name),
                     "model_name": model_key,
+                    "_posizione": (posizione_app, posizione_modello),
                 }
             )
 
-    items.sort(key=lambda i: (i["order"], i["app_name"], i["label"]))
+    # Chi ha scelto un ordine dal pannello viene prima; per tutti gli altri
+    # vale l'ordine del progetto, non quello alfabetico.
+    items.sort(key=lambda i: (i["order"], i["_posizione"]))
+    for item in items:
+        item.pop("_posizione", None)
     return items
 
 

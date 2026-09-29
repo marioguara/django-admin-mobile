@@ -6,6 +6,16 @@ e il progetto usa [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-09-29
+
+### Corretto
+- **Il menu rispetta l'ordine del progetto.** Le voci venivano ordinate per nome
+  dell'app, quindi un progetto che aveva sistemato l'ordine in
+  `AdminSite.get_app_list` se lo vedeva buttare via: in cima finiva la app con
+  il nome alfabeticamente più basso, di solito una di servizio. Ora l'ordine
+  scelto dal pannello («Organizza il menu») viene prima, e per tutto il resto
+  vale l'ordine in cui `available_apps` consegna le app.
+
 ## [0.4.1] - 2026-09-29
 
 ### Corretto
