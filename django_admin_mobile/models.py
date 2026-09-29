@@ -85,3 +85,50 @@ class MenuIcon(models.Model):
     @property
     def is_app_level(self):
         return not self.model_name
+
+    @classmethod
+    def sincronizza(cls, site=None):
+        """Crea le voci mancanti per ogni modello registrato nell'admin.
+
+        Prima queste righe andavano create a mano, scrivendo `app_label` e
+        `model_name` esatti: un modello registrato dopo non compariva
+        nell'elenco, quindi la sua icona non si poteva cambiare pur vedendola
+        nel menu. Ora l'elenco si riempie da sé e all'utente resta solo da
+        ritoccare icona, nome e ordine.
+
+        Restituisce quante voci ha aggiunto.
+        """
+        from django.contrib import admin as django_admin
+
+        from .conf import get_config
+        from .menu import _icon_for
+
+        site = site or django_admin.site
+        config = get_config()
+        app_escluse = set(config.get("EXCLUDE_APPS") or [])
+        modelli_esclusi = {m.lower() for m in (config.get("EXCLUDE_MODELS") or [])}
+
+        esistenti = set(cls.objects.values_list("app_label", "model_name"))
+        nuove = []
+        for modello in site._registry:
+            app_label = modello._meta.app_label
+            model_name = modello._meta.model_name
+            if app_label in app_escluse:
+                continue
+            if f"{app_label}.{model_name}" in modelli_esclusi:
+                continue
+            if (app_label, model_name) in esistenti:
+                continue
+            nuove.append(cls(
+                app_label=app_label,
+                model_name=model_name,
+                # La stessa icona che il menu mostrerebbe da sé: così la voce
+                # nasce già com'è, e chi la modifica parte da lì.
+                icon=_icon_for(None, app_label, config),
+            ))
+
+        if nuove:
+            # `ignore_conflicts`: due richieste insieme potrebbero provarci
+            # entrambe, e il vincolo di unicità le fermerebbe.
+            cls.objects.bulk_create(nuove, ignore_conflicts=True)
+        return len(nuove)

@@ -6,6 +6,18 @@ e il progetto usa [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-09-29
+
+### Corretto
+- **«Icone del menu» ora si riempie da sé.** Le voci andavano create a mano,
+  scrivendo `app_label` e `model_name` esatti: un modello registrato nell'admin
+  compariva nel menu ma non in questo elenco, quindi la sua icona non si poteva
+  cambiare. Ora le voci mancanti vengono create automaticamente per **ogni
+  modello registrato**, dopo ogni `migrate` e all'apertura dell'elenco, e
+  all'utente resta solo da ritoccare icona, nome e ordine. Le app e i modelli
+  in `EXCLUDE_APPS` / `EXCLUDE_MODELS` restano fuori, e l'icona di partenza è
+  la stessa che il menu userebbe da sé.
+
 ## [0.4.2] - 2026-09-29
 
 ### Corretto

@@ -64,6 +64,26 @@ class MenuIconAdmin(admin.ModelAdmin):
             icon=obj.icon,
         )
 
+    def changelist_view(self, request, extra_context=None):
+        """Prima di mostrare l'elenco, lo completa.
+
+        Un modello registrato nell'admin compare nel menu anche senza una riga
+        qui: ma senza quella riga non se ne può cambiare icona o nome. Le voci
+        mancanti si creano qui, così chi apre la pagina trova tutto quello che
+        vede nel menu e deve solo ritoccarlo.
+        """
+        try:
+            aggiunte = MenuIcon.sincronizza(self.admin_site)
+        except Exception:
+            aggiunte = 0
+        if aggiunte:
+            self.message_user(
+                request,
+                f"{aggiunte} voci aggiunte all'elenco: erano nel menu ma non "
+                f"qui, quindi non si potevano modificare.",
+            )
+        return super().changelist_view(request, extra_context)
+
     # ── Pagina "Organizza il menu" ────────────────────────────────────────
 
     def get_urls(self):
