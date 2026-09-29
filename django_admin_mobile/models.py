@@ -8,6 +8,51 @@ HEX_COLOR_VALIDATOR = RegexValidator(
 )
 
 
+class MenuGroup(models.Model):
+    """Una sezione del menu, con un nome scelto da chi lo usa.
+
+    Senza, le sezioni sono le app di Django: nomi che significano qualcosa per
+    chi ha scritto il codice e niente per chi lo usa, e soprattutto confini
+    sbagliati. «Come esce il referto» sta in due app diverse; «cosa devo fare
+    oggi» in tre. Un gruppo può raccogliere modelli di **app diverse**, così il
+    menu segue le domande di chi lavora invece della struttura del progetto.
+
+    Le voci senza gruppo restano raggruppate per app, come prima: chi non
+    configura niente non si accorge che questo modello esiste.
+    """
+
+    nome = models.CharField(
+        max_length=80,
+        verbose_name="Nome della sezione",
+        help_text="Come si chiama nel menu, es. «Oggi in studio».",
+    )
+    icona = models.CharField(
+        max_length=16,
+        blank=True,
+        default="",
+        verbose_name="Icona",
+        help_text="Facoltativa: compare accanto al nome della sezione.",
+    )
+    ordine = models.IntegerField(
+        default=0,
+        verbose_name="Ordine",
+        help_text="Le sezioni si susseguono da questo numero, dal più piccolo.",
+    )
+    visibile = models.BooleanField(
+        default=True,
+        verbose_name="Visibile",
+        help_text="Togli la spunta per nascondere la sezione e tutte le sue voci.",
+    )
+
+    class Meta:
+        verbose_name = "Sezione del menu"
+        verbose_name_plural = "Sezioni del menu"
+        ordering = ("ordine", "nome")
+
+    def __str__(self):
+        return f"{self.icona} {self.nome}".strip()
+
+
 class MenuIconQuerySet(models.QuerySet):
     def as_map(self):
         """Restituisce {(app_label, model_name_minuscolo_o_vuoto): MenuIcon}."""
@@ -66,6 +111,15 @@ class MenuIcon(models.Model):
         default=True,
         verbose_name="Visibile",
         help_text="Se disattivato, la voce non compare nel menu.",
+    )
+    gruppo = models.ForeignKey(
+        MenuGroup,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="voci",
+        verbose_name="Sezione",
+        help_text="Lascia vuoto per tenere la voce nella sezione della sua app.",
     )
     pinned = models.BooleanField(
         default=False,

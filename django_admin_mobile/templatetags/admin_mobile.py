@@ -90,13 +90,11 @@ def render_mobile_menu(context, app_list=None):
 
 
 def _group(items):
-    """Raggruppa le voci per app mantenendo l'ordine ricevuto."""
-    groups = []
-    index = {}
-    for item in items:
-        key = item["app_label"]
-        if key not in index:
-            index[key] = {"app_label": key, "name": item["app_name"], "items": []}
-            groups.append(index[key])
-        index[key]["items"].append(item)
-    return groups
+    """Raggruppa le voci come fa il menu, sezioni comprese.
+
+    Una copia del raggruppamento qui dentro tornerebbe a dividere per app e la
+    griglia della home direbbe una cosa diversa dal menu: si usa lo stesso.
+    """
+    from ..menu import build_groups
+
+    return build_groups(items)

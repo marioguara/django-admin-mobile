@@ -433,6 +433,15 @@ body.dam-mobile .dam-drawer.dam-open { transform: translateX(0); }
 
 .dam-drawer-body { flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 6px 0 10px; }
 
+/* L'icona della sezione: piccola, davanti al nome, per ritrovare la sezione
+   con un colpo d'occhio invece di leggere tutte le intestazioni. */
+.dam-group-icon {
+    margin-right: 6px;
+    font-size: 1.05em;
+    line-height: 1;
+    vertical-align: -0.05em;
+}
+
 .dam-group-title {
     margin: 12px 0 2px;
     padding: 0 14px;

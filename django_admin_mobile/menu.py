@@ -55,7 +55,7 @@ def _load_icons():
     default e resterebbe visibile — che è esattamente il contrario.
     """
     try:
-        return MenuIcon.objects.all().as_map()
+        return MenuIcon.objects.select_related('gruppo').as_map()
     except DatabaseError:
         # Migrazione non ancora applicata (o database non raggiungibile):
         # la shell deve comunque funzionare con i default.
@@ -124,6 +124,10 @@ def build_items(app_list, config=None, include_hidden=False):
                 continue
             cfg = _resolve(icons, app_label, model_key)
             visible = cfg.visible if cfg else True
+            # Nascondere una sezione nasconde quello che contiene: è il modo
+            # più rapido di togliere di mezzo un pezzo che non si usa.
+            if cfg and cfg.gruppo_id and not cfg.gruppo.visibile:
+                visible = False
             if not visible and not include_hidden:
                 continue
             label = cfg.label_override if cfg and cfg.label_override else (model.get("name") or model_key)
@@ -141,26 +145,51 @@ def build_items(app_list, config=None, include_hidden=False):
                     "app_label": _text(app_label),
                     "app_name": _text(app_name),
                     "model_name": model_key,
+                    # La sezione: quella scelta a mano, o l'app se non c'è.
+                    "group_key": (f"g{cfg.gruppo_id}" if cfg and cfg.gruppo_id
+                                  else f"a{app_label}"),
+                    "group_name": (_text(cfg.gruppo.nome) if cfg and cfg.gruppo_id
+                                   else _text(app_name)),
+                    "group_icon": (_text(cfg.gruppo.icona) if cfg and cfg.gruppo_id
+                                   else ""),
+                    "group_order": (cfg.gruppo.ordine if cfg and cfg.gruppo_id else None),
                     "_posizione": (posizione_app, posizione_modello),
                 }
             )
 
-    # Chi ha scelto un ordine dal pannello viene prima; per tutti gli altri
-    # vale l'ordine del progetto, non quello alfabetico.
-    items.sort(key=lambda i: (i["order"], i["_posizione"]))
+    # Tre livelli, in quest'ordine:
+    #  1. la sezione, se qualcuno l'ha definita (le voci senza sezione vanno
+    #     dopo quelle raccolte a mano: chi ha configurato ha deciso);
+    #  2. l'ordine della singola voce, scelto dal pannello;
+    #  3. l'ordine del progetto (`available_apps`), non quello alfabetico.
+    items.sort(key=lambda i: (
+        i["group_order"] if i["group_order"] is not None else 10 ** 6,
+        i["order"],
+        i["_posizione"],
+    ))
     for item in items:
         item.pop("_posizione", None)
     return items
 
 
 def build_groups(items):
-    """Raggruppa le voci per app, mantenendo l'ordine di ``items``."""
+    """Raggruppa le voci per sezione, mantenendo l'ordine di ``items``.
+
+    La sezione è quella configurata a mano oppure, per chi non ne ha una,
+    l'app di Django: così un progetto che non definisce niente vede il menu di
+    prima, e uno che definisce le sezioni le vede rispettate.
+    """
     groups = []
     index = {}
     for item in items:
-        key = item["app_label"]
+        key = item.get("group_key") or f'a{item["app_label"]}'
         if key not in index:
-            index[key] = {"app_label": key, "name": item["app_name"], "items": []}
+            index[key] = {
+                "app_label": item["app_label"],
+                "name": item.get("group_name") or item["app_name"],
+                "icon": item.get("group_icon") or "",
+                "items": [],
+            }
             groups.append(index[key])
         index[key]["items"].append(item)
     return groups

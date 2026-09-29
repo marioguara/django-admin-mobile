@@ -6,7 +6,52 @@ from django.urls import path, reverse
 from django.utils.html import format_html
 
 from .menu import build_items
-from .models import MenuIcon
+from .models import MenuGroup, MenuIcon
+
+
+@admin.register(MenuGroup)
+class MenuGroupAdmin(admin.ModelAdmin):
+    """Le sezioni del menu: un nome scelto da chi lo usa, non l'app di Django.
+
+    Una sezione può raccogliere modelli di app diverse: «come esce il referto»
+    sta in due app, «cosa devo fare oggi» in tre, e chi lavora non deve sapere
+    dove il codice le ha messe.
+    """
+
+    list_display = ("maniglia", "anteprima", "quante_voci", "ordine", "visibile")
+    list_display_links = ("anteprima",)
+    list_editable = ("ordine", "visibile")
+    change_list_template = "django_admin_mobile/menugroup_changelist.html"
+    fields = ("nome", "icona", "ordine", "visibile")
+
+    class Media:
+        css = {"all": ("django_admin_mobile/css/changelist_riordino.css",)}
+        js = ("django_admin_mobile/js/changelist_riordino.js",)
+
+    @admin.display(description="")
+    def maniglia(self, obj):
+        return format_html(
+            '<span class="dam-riga-presa" title="Trascina per riordinare" '
+            'aria-hidden="true">⠿</span>'
+        )
+
+    @admin.display(description="Sezione")
+    def anteprima(self, obj):
+        return format_html(
+            '<span style="font-size:18px;">{}</span> <strong>{}</strong>',
+            obj.icona or "•", obj.nome,
+        )
+
+    @admin.display(description="Voci")
+    def quante_voci(self, obj):
+        quante = obj.voci.count()
+        if not quante:
+            return format_html(
+                '<span style="color:#a4231b;">nessuna voce: la sezione non compare</span>')
+        return f"{quante} voc{'e' if quante == 1 else 'i'}"
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related("voci")
 
 
 @admin.register(MenuIcon)
@@ -18,6 +63,7 @@ class MenuIconAdmin(admin.ModelAdmin):
         "model_name",
         "icon",
         "label_override",
+        "gruppo",
         "order",
         "pinned",
         "visible",
@@ -26,8 +72,8 @@ class MenuIconAdmin(admin.ModelAdmin):
     # Tutto quello che si cambia davvero si cambia da qui: icona, nome, ordine
     # e visibilità. Aprire la scheda di una voce per cambiare un'emoji era una
     # cerimonia inutile.
-    list_editable = ("icon", "label_override", "order", "pinned", "visible")
-    list_filter = ("visible", "pinned", "app_label")
+    list_editable = ("icon", "label_override", "gruppo", "order", "pinned", "visible")
+    list_filter = ("gruppo", "visible", "pinned", "app_label")
     search_fields = ("app_label", "model_name", "label_override")
     change_list_template = "django_admin_mobile/menuicon_changelist.html"
 
@@ -38,7 +84,7 @@ class MenuIconAdmin(admin.ModelAdmin):
         (
             "Destinazione",
             {
-                "fields": ("app_label", "model_name", "label_override"),
+                "fields": ("app_label", "model_name", "label_override", "gruppo"),
                 "description": (
                     "Indica per quale voce dell'admin Django questa icona deve "
                     "essere applicata. Lascia `model_name` vuoto per fare "

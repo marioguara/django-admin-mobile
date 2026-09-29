@@ -6,6 +6,30 @@ e il progetto usa [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-29
+
+### Aggiunto
+- **Sezioni del menu con un nome scelto da chi lo usa** (modello `MenuGroup`).
+  Finora le sezioni erano le app di Django: nomi che significano qualcosa per
+  chi ha scritto il codice, e soprattutto **confini sbagliati**. Una sezione
+  può ora raccogliere modelli di **app diverse**, così il menu segue le domande
+  di chi lavora invece della struttura del progetto.
+  - La sezione si assegna dall'elenco «Icone del menu», in riga, come icona e
+    nome.
+  - Le sezioni si riordinano trascinandole, con la stessa maniglia dell'elenco
+    delle icone.
+  - Nascondere una sezione nasconde tutte le sue voci: è il modo più rapido di
+    togliere di mezzo un pezzo che non si usa.
+  - L'icona della sezione compare accanto al suo nome, nel menu laterale e in
+    quello del telefono.
+- Le voci **senza** sezione restano raggruppate per app, e vengono dopo quelle
+  sistemate a mano: un progetto che non configura niente vede il menu di prima.
+
+### Modificato
+- La griglia della home non ha più una copia del raggruppamento: usa la stessa
+  funzione del menu, così le due cose non possono più dire l'una una cosa e
+  l'altra un'altra.
+
 ## [0.4.4] - 2026-09-29
 
 ### Aggiunto

@@ -383,6 +383,16 @@
         return nav;
     }
 
+    /** Titolo di una sezione, con l'icona davanti se ne ha una. */
+    function titoloSezione(group) {
+        var h = el("h2", "dam-group-title");
+        if (group.icon) {
+            h.appendChild(el("span", "dam-group-icon", group.icon));
+        }
+        h.appendChild(document.createTextNode(group.name || ""));
+        return h;
+    }
+
     function buildDrawerLink(item) {
         var row = el("div", "dam-row");
         var link = el("a", "dam-link");
@@ -494,7 +504,7 @@
         var sections = [];
         each(CFG.groups, function (group) {
             var section = el("section", "dam-group");
-            section.appendChild(el("h2", "dam-group-title", group.name));
+            section.appendChild(titoloSezione(group));
             var rows = [];
             each(group.items, function (item) {
                 var row = buildDrawerLink(item);
@@ -987,7 +997,7 @@
         var sections = [];
         each(CFG.groups, function (group) {
             var section = el("section", "dam-group");
-            section.appendChild(el("h2", "dam-group-title", group.name));
+            section.appendChild(titoloSezione(group));
             var rows = [];
             each(group.items, function (item) {
                 var row = buildDrawerLink(item);
