@@ -1,0 +1,59 @@
+/* Riordino trascinando le righe dell'elenco «Icone del menu».
+
+   La maniglia deve essere grossa abbastanza da prendersi col dito (44 px è il
+   minimo utile) e la riga in movimento deve staccarsi visibilmente dalle
+   altre, o non si capisce dove la si sta portando. */
+
+.dam-nota-riordino {
+    margin: 0 0 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: #eef3f9;
+    color: #1f4e79;
+    font-size: 13px;
+}
+.dam-avviso-ordine {
+    background: #fff4e5;
+    color: #8a5300;
+    font-weight: bold;
+}
+
+.dam-riga-presa {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    min-height: 34px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    color: #8a96a3;
+    font-size: 19px;
+    line-height: 1;
+    cursor: grab;
+    touch-action: none;       /* senza, il dito scorre la pagina invece di trascinare */
+    user-select: none;
+}
+.dam-riga-presa:hover { background: #eef3f9; color: #1f4e79; }
+.dam-riga-presa:focus-visible { outline: 2px solid #417690; outline-offset: 1px; }
+.dam-riga-presa:active { cursor: grabbing; }
+
+#result_list tr.dam-riga-in-movimento {
+    background: #e3eef8 !important;
+    box-shadow: 0 6px 18px rgba(16, 24, 32, .18);
+    opacity: .96;
+}
+#result_list tr.dam-riga-in-movimento td { border-color: transparent; }
+
+#result_list tr.dam-riga-appena-spostata {
+    animation: dam-lampo 0.7s ease-out;
+}
+@keyframes dam-lampo {
+    from { background: #fff4c2; }
+    to { background: transparent; }
+}
+
+/* Su telefono la maniglia prende tutta l'altezza della cella: il dito non
+   deve cercare il bersaglio. */
+@media (max-width: 767px) {
+    .dam-riga-presa { width: 44px; min-height: 44px; font-size: 22px; }
+}

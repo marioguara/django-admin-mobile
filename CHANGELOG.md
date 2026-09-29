@@ -6,6 +6,29 @@ e il progetto usa [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-09-29
+
+### Aggiunto
+- **L'ordine delle icone si cambia trascinando, dall'elenco.** Finora andava
+  scritto a mano nella colonna «order», oppure si doveva passare dalla pagina
+  «Organizza il menu». Ora ogni riga dell'elenco ha una maniglia: si trascina
+  (dito, penna o mouse — Pointer Events, non il drag-and-drop HTML5 che sul
+  telefono non esiste), i numeri li riscrive il JavaScript e si salva col
+  pulsante che l'elenco ha già. Niente endpoint in più, e finché non si salva
+  basta ricaricare per tornare indietro.
+  Le frecce su/giù sulla maniglia restano la via da tastiera. I numeri
+  assegnati sono quelli già presenti nella pagina, riordinati: con l'elenco
+  paginato la seconda pagina non collide con la prima. Se l'elenco è ordinato
+  per un'altra colonna il trascinamento si spegne, e la pagina dice perché.
+- **Icona e nome si cambiano dall'elenco**, senza aprire la scheda della voce:
+  `icon` e `label_override` sono modificabili in riga insieme a ordine,
+  «in evidenza» e visibilità. Cambiare un'emoji non vale una pagina a parte.
+
+### Modificato
+- **Le colonne dell'elenco sono in italiano**: App, Modello, Icona, Nome
+  mostrato, Ordine, Visibile. Erano rimaste coi nomi dei campi, in inglese, su
+  una pagina pensata per chi non sa come si chiamano le app dentro Django.
+
 ## [0.4.3] - 2026-09-29
 
 ### Corretto

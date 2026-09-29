@@ -19,11 +19,13 @@ class MenuIcon(models.Model):
 
     app_label = models.CharField(
         max_length=100,
+        verbose_name="App",
         help_text="Etichetta dell'app Django (es. `pazienti`, `visite`, `auth`).",
     )
     model_name = models.CharField(
         max_length=100,
         blank=True,
+        verbose_name="Modello",
         help_text=(
             "Nome del modello in minuscolo (es. `paziente`). "
             "Lascia vuoto per assegnare l'icona all'intera app."
@@ -32,31 +34,37 @@ class MenuIcon(models.Model):
     icon = models.CharField(
         max_length=16,
         default="📋",
+        verbose_name="Icona",
         help_text="Emoji o carattere unicode da mostrare come icona del bottone.",
     )
     color = models.CharField(
         max_length=7,
         default="#417690",
+        verbose_name="Colore",
         validators=[HEX_COLOR_VALIDATOR],
         help_text="Colore del testo / bordo (formato #RRGGBB).",
     )
     background = models.CharField(
         max_length=7,
         default="#ffffff",
+        verbose_name="Sfondo",
         validators=[HEX_COLOR_VALIDATOR],
         help_text="Colore di sfondo del bottone (formato #RRGGBB).",
     )
     label_override = models.CharField(
         max_length=100,
         blank=True,
+        verbose_name="Nome mostrato",
         help_text="Se valorizzato, sovrascrive il nome mostrato sul bottone.",
     )
     order = models.IntegerField(
         default=0,
+        verbose_name="Ordine",
         help_text="Ordinamento crescente all'interno del menu.",
     )
     visible = models.BooleanField(
         default=True,
+        verbose_name="Visibile",
         help_text="Se disattivato, la voce non compare nel menu.",
     )
     pinned = models.BooleanField(

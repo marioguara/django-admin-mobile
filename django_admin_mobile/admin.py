@@ -12,19 +12,28 @@ from .models import MenuIcon
 @admin.register(MenuIcon)
 class MenuIconAdmin(admin.ModelAdmin):
     list_display = (
+        "maniglia",
         "preview",
         "app_label",
         "model_name",
+        "icon",
         "label_override",
         "order",
         "pinned",
         "visible",
     )
     list_display_links = ("preview", "app_label")
-    list_editable = ("order", "pinned", "visible")
+    # Tutto quello che si cambia davvero si cambia da qui: icona, nome, ordine
+    # e visibilità. Aprire la scheda di una voce per cambiare un'emoji era una
+    # cerimonia inutile.
+    list_editable = ("icon", "label_override", "order", "pinned", "visible")
     list_filter = ("visible", "pinned", "app_label")
     search_fields = ("app_label", "model_name", "label_override")
     change_list_template = "django_admin_mobile/menuicon_changelist.html"
+
+    class Media:
+        css = {"all": ("django_admin_mobile/css/changelist_riordino.css",)}
+        js = ("django_admin_mobile/js/changelist_riordino.js",)
     fieldsets = (
         (
             "Destinazione",
@@ -52,6 +61,19 @@ class MenuIconAdmin(admin.ModelAdmin):
             },
         ),
     )
+
+    @admin.display(description="")
+    def maniglia(self, obj):
+        """La presa per trascinare la riga.
+
+        L'ordine si cambia trascinando: i numeri della colonna «order» li
+        riscrive il JavaScript, e si salvano col pulsante di Django che
+        l'elenco ha già. Nessuno deve più pensare a che numero mettere.
+        """
+        return format_html(
+            '<span class="dam-riga-presa" title="Trascina per riordinare" '
+            'aria-hidden="true">⠿</span>'
+        )
 
     @admin.display(description="Anteprima")
     def preview(self, obj):
